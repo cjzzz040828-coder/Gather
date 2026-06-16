@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.campus</groupId>
+        <artifactId>campus-api</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>campus-web-api</artifactId>
+    <packaging>jar</packaging>
+    <name>Campus Web API</name>
+    <description>PC端接口层 - Web前台控制器</description>
+
+    <dependencies>
+        <!-- 认证模块 -->
+        <dependency>
+            <groupId>com.campus</groupId>
+            <artifactId>campus-auth</artifactId>
+        </dependency>
+        <!-- 系统模块 -->
+        <dependency>
+            <groupId>com.campus</groupId>
+            <artifactId>campus-system</artifactId>
+        </dependency>
+        <!-- 业务模块（拼团交易） -->
+        <dependency>
+            <groupId>com.campus</groupId>
+            <artifactId>campus-biz</artifactId>
+        </dependency>
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+    </dependencies>
+</project>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.campus</groupId>
+        <artifactId>campus-admin</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>campus-infra</artifactId>
+    <packaging>pom</packaging>
+    <name>Campus Infra</name>
+    <description>基础设施层</description>
+
+    <modules>
+        <module>campus-db</module>
+        <module>campus-redis</module>
+        <module>campus-oss</module>
+        <module>campus-websocket</module>
+        <module>campus-sms</module>
+        <module>campus-push</module>
+        <module>campus-pay</module>
+        <module>campus-wechat</module>
+        <module>campus-social</module>
+        <module>campus-crypto</module>
+        <module>campus-mail</module>
+    </modules>
+</project>

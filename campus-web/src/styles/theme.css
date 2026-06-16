@@ -1,0 +1,274 @@
+/* 京东/电商风全局设计 token */
+:root {
+  /* 主色：京东红 */
+  --c-primary: #e1251b;
+  --c-primary-dark: #c81623;
+  --c-primary-light: #fef0f0;
+  --c-accent: #ff6a00; /* 促销橙 */
+  --c-price: #e1251b;
+
+  /* 中性 */
+  --c-text: #1a1a1a;
+  --c-text-2: #565656;
+  --c-text-3: #999;
+  --c-border: #f0f0f0;
+  --c-bg: #f6f6f6;
+  --c-bg-warm: #fff4f0;
+  --c-white: #fff;
+
+  /* 排版 */
+  --fz-xs: 12px;
+  --fz-sm: 13px;
+  --fz-base: 14px;
+  --fz-md: 16px;
+  --fz-lg: 20px;
+  --fz-xl: 28px;
+  --fz-2xl: 40px;
+
+  /* 间距 */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-8: 48px;
+
+  /* 圆角 / 阴影 —— 京东式扁平小圆角 */
+  --radius-sm: 2px;
+  --radius: 4px;
+  --radius-lg: 6px;
+  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-hover: 0 8px 18px rgba(225, 37, 27, 0.14);
+
+  --container: 1200px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  background: var(--c-bg);
+  color: var(--c-text);
+  font-size: var(--fz-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.container {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* 价格通用排版 */
+.price {
+  color: var(--c-price);
+  font-weight: 700;
+}
+.price .symbol {
+  font-size: 0.7em;
+}
+.price .origin {
+  color: var(--c-text-3);
+  text-decoration: line-through;
+  font-weight: 400;
+  font-size: var(--fz-sm);
+  margin-left: var(--sp-2);
+}
+
+/* 区块标题 */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: var(--fz-lg);
+  font-weight: 700;
+  margin: var(--sp-6) 0 var(--sp-4);
+}
+.section-title::before {
+  content: '';
+  width: 4px;
+  height: 20px;
+  background: var(--c-primary);
+  border-radius: 2px;
+}
+
+/* 让 Element 主色对齐京东红 */
+:root {
+  --el-color-primary: #e1251b;
+  --el-color-primary-light-3: #ea6a64;
+  --el-color-primary-light-5: #f0938e;
+  --el-color-primary-light-7: #f6bcb9;
+  --el-color-primary-light-9: #fce9e8;
+  --el-color-primary-dark-2: #c81623;
+  --el-border-radius-base: 4px;
+}
+
+/* ===== 京东商城通用类 ===== */
+
+/* 白底细边卡片，hover 红边上浮 */
+.jd-card {
+  background: var(--c-white);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+.jd-card.hoverable:hover {
+  border-color: var(--c-primary);
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-3px);
+}
+
+/* 面包屑条 */
+.crumb-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  font-size: var(--fz-sm);
+  color: var(--c-text-3);
+}
+.crumb-bar a {
+  cursor: pointer;
+}
+.crumb-bar a:hover {
+  color: var(--c-primary);
+}
+.crumb-bar .sep {
+  color: #ccc;
+}
+.crumb-bar .cur {
+  color: var(--c-text-2);
+}
+
+/* 横向分类条（京东"为你推荐"风） */
+.cat-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-5);
+  background: var(--c-white);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  padding: 0 var(--sp-5);
+  height: 48px;
+}
+.cat-item {
+  position: relative;
+  font-size: var(--fz-base);
+  color: var(--c-text-2);
+  cursor: pointer;
+  line-height: 48px;
+  transition: color 0.15s;
+}
+.cat-item:hover {
+  color: var(--c-primary);
+}
+.cat-item.active {
+  color: var(--c-primary);
+  font-weight: 700;
+}
+.cat-item.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--c-primary);
+}
+
+/* 登录弹窗皮肤：dialog teleport 到 body，必须用全局选择器（scoped :deep 匹配不到） */
+.login-overlay {
+  background: rgba(0, 0, 0, 0.25);
+}
+.el-dialog.login-dialog {
+  border-radius: 20px;
+  padding: 12px 32px 28px;
+  /* align-center 负责视口垂直居中；此处仅整体右移避开左侧文案 */
+  margin-right: 8vw !important;
+  /* 毛玻璃效果 */
+  background: rgba(255, 255, 255, 0.18) !important;
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.35);
+}
+.el-dialog.login-dialog .el-dialog__header {
+  padding: 0;
+  margin: 0;
+}
+.el-dialog.login-dialog .el-dialog__body {
+  padding: 0;
+}
+/* 毛玻璃背景下输入框：透明深底 + 白字 */
+.el-dialog.login-dialog .el-input__wrapper {
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4) inset;
+}
+.el-dialog.login-dialog .el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1px #fff inset;
+}
+.el-dialog.login-dialog .el-input__inner {
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+}
+.el-dialog.login-dialog .el-input__inner::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+.el-dialog.login-dialog .el-input__prefix,
+.el-dialog.login-dialog .el-input__suffix,
+.el-dialog.login-dialog .el-input__icon {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* 用户下拉菜单：透明毛玻璃 + 白字，hover 整行变白实底红字（同 .cta-btn 风格） */
+.user-dropdown.el-popper {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+.user-dropdown.el-popper .el-popper__arrow::before {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+.user-dropdown .el-dropdown-menu {
+  background: transparent;
+  padding: 6px;
+}
+.user-dropdown .el-dropdown-menu__item {
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 400;
+  border-radius: 8px;
+  padding: 8px 18px;
+  transition: all 0.2s;
+}
+.user-dropdown .el-dropdown-menu__item:not(.is-disabled):hover,
+.user-dropdown .el-dropdown-menu__item:not(.is-disabled):focus {
+  background: transparent;
+  color: #fff;
+}

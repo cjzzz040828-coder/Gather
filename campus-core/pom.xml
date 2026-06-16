@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.campus</groupId>
+        <artifactId>campus-admin</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>campus-core</artifactId>
+    <packaging>pom</packaging>
+    <name>Campus Core</name>
+    <description>业务核心层 - 业务模块</description>
+
+    <modules>
+        <module>campus-system</module>
+        <module>campus-file</module>
+        <module>campus-gen</module>
+        <module>campus-message</module>
+        <module>campus-auth</module>
+        <module>campus-biz</module>
+    </modules>
+</project>

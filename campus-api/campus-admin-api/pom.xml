@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.campus</groupId>
+        <artifactId>campus-api</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>campus-admin-api</artifactId>
+    <packaging>jar</packaging>
+    <name>Campus Admin API</name>
+    <description>后台管理接口层 - Admin控制器</description>
+
+    <dependencies>
+        <!-- 认证模块 -->
+        <dependency>
+            <groupId>com.campus</groupId>
+            <artifactId>campus-auth</artifactId>
+        </dependency>
+        <!-- 业务模块 -->
+        <dependency>
+            <groupId>com.campus</groupId>
+            <artifactId>campus-system</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.campus</groupId>
+            <artifactId>campus-crypto</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.campus</groupId>
+            <artifactId>campus-file</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.campus</groupId>
+            <artifactId>campus-gen</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.campus</groupId>
+            <artifactId>campus-biz</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.campus</groupId>
+            <artifactId>campus-message</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.campus</groupId>
+            <artifactId>campus-pay</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.campus</groupId>
+            <artifactId>campus-sms</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.campus</groupId>
+            <artifactId>campus-job</artifactId>
+        </dependency>
+
+        <!-- WebSocket基础设施 -->
+        <dependency>
+            <groupId>com.campus</groupId>
+            <artifactId>campus-websocket</artifactId>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+    </dependencies>
+</project>

@@ -1,0 +1,36 @@
+# Node
+node_modules/
+dist/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Maven
+target/
+**/target/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads
+uploads/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Temp / tooling artifacts
+.codex-tmp/
+.playwright-mcp/
+vite-live.log
+
+# 前端打包产物（由 campus-ui 构建生成，部署时再打包）
+campus-starter/src/main/resources/static/
