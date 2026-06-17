@@ -34,3 +34,6 @@ vite-live.log
 
 # 前端打包产物（由 campus-ui 构建生成，部署时再打包）
 campus-starter/src/main/resources/static/
+
+# Claude Code 本地配置(含权限模式,不提交)
+.claude/settings.local.json

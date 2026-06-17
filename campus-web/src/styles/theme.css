@@ -1,19 +1,19 @@
-/* 京东/电商风全局设计 token */
+/* 集萃 · 极简高级设计 token */
 :root {
-  /* 主色：京东红 */
-  --c-primary: #e1251b;
-  --c-primary-dark: #c81623;
-  --c-primary-light: #fef0f0;
-  --c-accent: #ff6a00; /* 促销橙 */
-  --c-price: #e1251b;
+  /* 主色：墨黑（极简高级风，替代原京东红） */
+  --c-primary: #1c1c1e;
+  --c-primary-dark: #000;
+  --c-primary-light: #f3f1ee;
+  --c-accent: #8a7f6d; /* 暖灰金，低调点缀 */
+  --c-price: #1c1c1e;
 
   /* 中性 */
-  --c-text: #1a1a1a;
-  --c-text-2: #565656;
-  --c-text-3: #999;
-  --c-border: #f0f0f0;
-  --c-bg: #f6f6f6;
-  --c-bg-warm: #fff4f0;
+  --c-text: #1c1c1e;
+  --c-text-2: #6b6b70;
+  --c-text-3: #a1a1a6;
+  --c-border: #ececec;
+  --c-bg: #faf9f7;
+  --c-bg-warm: #f3f1ee;
   --c-white: #fff;
 
   /* 排版 */
@@ -34,13 +34,13 @@
   --sp-6: 32px;
   --sp-8: 48px;
 
-  /* 圆角 / 阴影 —— 京东式扁平小圆角 */
-  --radius-sm: 2px;
-  --radius: 4px;
-  --radius-lg: 6px;
-  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-hover: 0 8px 18px rgba(225, 37, 27, 0.14);
+  /* 圆角 / 阴影 —— 大圆角 + 柔阴影 */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.06);
+  --shadow-hover: 0 12px 30px rgba(0, 0, 0, 0.1);
 
   --container: 1200px;
 }
@@ -114,15 +114,22 @@ a {
   border-radius: 2px;
 }
 
-/* 让 Element 主色对齐京东红 */
+/* 让 Element 主色对齐墨黑 */
 :root {
-  --el-color-primary: #e1251b;
-  --el-color-primary-light-3: #ea6a64;
-  --el-color-primary-light-5: #f0938e;
-  --el-color-primary-light-7: #f6bcb9;
-  --el-color-primary-light-9: #fce9e8;
-  --el-color-primary-dark-2: #c81623;
-  --el-border-radius-base: 4px;
+  --el-color-primary: #1c1c1e;
+  --el-color-primary-light-3: #4a4a4e;
+  --el-color-primary-light-5: #6b6b70;
+  --el-color-primary-light-7: #a1a1a6;
+  --el-color-primary-light-9: #ececec;
+  --el-color-primary-dark-2: #000;
+  --el-border-radius-base: 8px;
+  /* danger 按钮也收敛成墨色，避免突兀的红（拼团/支付按钮用的是 type=danger） */
+  --el-color-danger: #1c1c1e;
+  --el-color-danger-light-3: #4a4a4e;
+  --el-color-danger-light-5: #6b6b70;
+  --el-color-danger-light-7: #a1a1a6;
+  --el-color-danger-light-9: #ececec;
+  --el-color-danger-dark-2: #000;
 }
 
 /* ===== 京东商城通用类 ===== */
@@ -271,4 +278,165 @@ a {
 .user-dropdown .el-dropdown-menu__item:not(.is-disabled):focus {
   background: transparent;
   color: #fff;
+}
+
+/* ===== 高级质感：按钮 / 卡片 微交互（方案3） ===== */
+
+/* Element 主按钮 + danger 按钮：墨色实底 + 光泽扫过 + hover 上浮 + 按下回弹 */
+.el-button--primary,
+.el-button--danger {
+  position: relative;
+  overflow: hidden;
+  border: none;
+  letter-spacing: 1px;
+  font-weight: 500;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.22s ease;
+}
+.el-button--primary::after,
+.el-button--danger::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(255, 255, 255, 0.28),
+    transparent
+  );
+  transform: skewX(-18deg);
+  transition: left 0.55s ease;
+  pointer-events: none;
+}
+.el-button--primary:hover,
+.el-button--danger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.24);
+}
+.el-button--primary:hover::after,
+.el-button--danger:hover::after {
+  left: 130%;
+}
+.el-button--primary:active,
+.el-button--danger:active {
+  transform: translateY(0) scale(0.985);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+}
+
+/* 朴素/次级按钮：细边 + hover 墨边轻浮 */
+.el-button--default {
+  border-color: var(--c-border);
+  letter-spacing: 1px;
+  transition: all 0.22s ease;
+}
+.el-button--default:hover {
+  border-color: var(--c-primary);
+  color: var(--c-primary);
+  transform: translateY(-1px);
+}
+
+/* 卡片质感升级：柔分层投影 + hover 缓动上浮 */
+.jd-card {
+  background: var(--c-white);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.28s ease, border-color 0.28s ease;
+}
+.jd-card.hoverable:hover,
+.jd-card.lux:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+  border-color: #e2e2e2;
+}
+
+/* 玻璃质感卡（深色背景上使用，如活动 hero 内的小卡） */
+.lux-glass {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-lg);
+}
+
+/* 自定义 .buy-btn 等原生按钮也享受光泽（首页/详情页里用到的） */
+.buy-btn {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius);
+  letter-spacing: 1px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.22s ease;
+}
+.buy-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.24);
+}
+.buy-btn:active {
+  transform: translateY(0) scale(0.985);
+}
+
+/* ===== 全局提示：极简高级风（与墨色主题统一） ===== */
+
+/* toast：纯白实底 + 大圆角 + 克制投影 + 墨色字、墨色图标 */
+.el-message {
+  min-width: 0;
+  padding: 12px 22px;
+  border: 1px solid var(--c-border) !important;
+  border-radius: 999px !important;
+  background: #fff !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.10) !important;
+}
+.el-message .el-message__content {
+  color: var(--c-text) !important;
+  font-size: 14px;
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+.el-message .el-message__icon {
+  font-size: 16px;
+  margin-right: 9px;
+  color: var(--c-text) !important;
+}
+/* 不同类型只用极淡的图标色差异，不再有彩色边条 */
+.el-message--warning .el-message__icon,
+.el-message--error .el-message__icon {
+  color: var(--c-text-2) !important;
+}
+
+/* 确认框：纯白大圆角卡 + 柔投影，墨色字体层次 */
+.el-message-box {
+  border-radius: 18px !important;
+  border: none !important;
+  padding: 26px 28px 22px !important;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18) !important;
+}
+.el-message-box__header {
+  padding-bottom: 10px;
+}
+.el-message-box__title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  color: var(--c-text);
+}
+.el-message-box__content {
+  color: var(--c-text-2);
+  font-size: 14px;
+  line-height: 1.7;
+  letter-spacing: 0.5px;
+}
+.el-message-box__btns {
+  padding-top: 20px;
+  gap: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+.el-overlay-message-box {
+  backdrop-filter: blur(3px);
+  background: rgba(28, 28, 30, 0.18);
 }

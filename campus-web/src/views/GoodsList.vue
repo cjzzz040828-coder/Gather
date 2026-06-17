@@ -1,20 +1,34 @@
 <template>
   <div class="goods-list">
-    <!-- 促销轮播 banner -->
-    <el-carousel height="200px" class="banner" :interval="4000" arrow="hover">
+    <!-- 主视觉：极简大留白横幅 -->
+    <el-carousel
+      height="220px"
+      class="hero"
+      :interval="6000"
+      arrow="never"
+      indicator-position="none"
+      @change="(i: number) => (heroIdx = i)"
+    >
       <el-carousel-item v-for="(b, i) in banners" :key="i">
-        <div class="banner-slide" :style="{ background: b.bg }">
-          <div class="banner-text">
-            <p class="banner-eyebrow">{{ b.eyebrow }}</p>
-            <h2 class="banner-title">{{ b.title }}</h2>
-            <p class="banner-sub">{{ b.sub }}</p>
+        <div class="hero-slide">
+          <div class="hero-inner">
+            <span class="hero-eyebrow">{{ b.eyebrow }}</span>
+            <h1 class="hero-title">{{ b.title }}</h1>
+            <p class="hero-sub">{{ b.sub }}</p>
           </div>
-          <div class="banner-price">{{ b.price }}</div>
         </div>
       </el-carousel-item>
     </el-carousel>
+    <div class="hero-dots">
+      <span
+        v-for="(b, i) in banners"
+        :key="i"
+        class="hero-dot"
+        :class="{ active: heroIdx === i }"
+      ></span>
+    </div>
 
-    <!-- 横向分类条 -->
+    <!-- 分类条 -->
     <div class="cat-bar">
       <span
         class="cat-item"
@@ -33,8 +47,8 @@
     </div>
 
     <!-- 标题 + 排序 -->
-    <div class="section-title list-head">
-      <span>{{ keyword ? `“${keyword}” 的搜索结果` : '为你推荐' }}</span>
+    <div class="list-head">
+      <h2 class="head-title">{{ keyword ? `“${keyword}” 的结果` : '为你精选' }}</h2>
       <div class="sort-bar">
         <span
           class="sort-item"
@@ -46,13 +60,13 @@
           class="sort-item"
           :class="{ active: sort === 'price_asc' }"
           @click="changeSort('price_asc')"
-          >价格↑</span
+          >价格 升</span
         >
         <span
           class="sort-item"
           :class="{ active: sort === 'price_desc' }"
           @click="changeSort('price_desc')"
-          >价格↓</span
+          >价格 降</span
         >
       </div>
     </div>
@@ -66,27 +80,26 @@
       <div
         v-for="item in goods"
         :key="item.id"
-        class="goods-card jd-card hoverable"
+        class="goods-card"
         @click="goDetail(item.id)"
       >
         <div class="cover">
           <el-image :src="item.cover" fit="cover" class="cover-img" lazy>
             <template #error>
-              <div class="cover-placeholder">{{ item.title?.charAt(0) || '商' }}</div>
+              <div class="cover-placeholder">{{ item.title?.charAt(0) || '集' }}</div>
             </template>
           </el-image>
-          <span class="corner">拼团</span>
+          <span v-if="item.category" class="cover-tag">{{ item.category }}</span>
         </div>
         <div class="info">
           <div class="goods-title">{{ item.title }}</div>
           <div class="price-line">
             <span class="price">
-              <span class="symbol">¥</span>{{ item.minPrice != null ? item.minPrice : '—' }}
+              <span class="symbol">¥</span><span class="price-num">{{ item.minPrice != null ? item.minPrice : '—' }}</span>
               <span class="price-suffix">起</span>
             </span>
-            <span v-if="item.category" class="cat-tag">{{ item.category }}</span>
+            <span class="go-detail">拼团 →</span>
           </div>
-          <button class="buy-btn" @click.stop="goDetail(item.id)">立即拼团</button>
         </div>
       </div>
     </div>
@@ -94,11 +107,10 @@
     <!-- 分页 -->
     <div v-if="total > pageSize" class="pager">
       <el-pagination
-        layout="prev, pager, next, total"
+        layout="prev, pager, next"
         :total="total"
         :page-size="pageSize"
         :current-page="page"
-        background
         @current-change="onPageChange"
       />
     </div>
@@ -121,11 +133,12 @@ const sort = ref('newest')
 const page = ref(1)
 const pageSize = ref(12)
 const total = ref(0)
+const heroIdx = ref(0)
 
 const banners = [
-  { eyebrow: '限时拼团', title: '省钱就要一起拼', sub: '邀好友组团，拼得越多省得越多', price: '¥99 起', bg: 'linear-gradient(120deg,#e1251b,#ff6a00)' },
-  { eyebrow: '成团包邮', title: '不成团 · 秒退款', sub: '放心拼，凑不齐自动原路退回', price: '0 风险', bg: 'linear-gradient(120deg,#c81623,#e1251b)' },
-  { eyebrow: '精选好物', title: '同学都在拼的优惠', sub: '实时进度看得见，成团享低价', price: '一起省', bg: 'linear-gradient(120deg,#ff6a00,#ff9a3d)' }
+  { eyebrow: 'GATHER · 集萃', title: '好物，值得一起拥有', sub: '邀三两好友，从容拼成一单' },
+  { eyebrow: '成团 · 安心', title: '不成团，原路退', sub: '凑不齐自动退回，零负担尝试' },
+  { eyebrow: '精选 · 严选', title: '挑剔之选', sub: '每一件，都经得起细看' }
 ]
 
 async function loadCategories() {
@@ -187,135 +200,203 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 轮播 banner */
-.banner {
-  border-radius: var(--radius);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
+.goods-list {
+  --ink: #1c1c1e;
+  --ink-2: #6b6b70;
+  --ink-3: #a1a1a6;
+  --line: #ececec;
+  --paper: #faf9f7;
 }
-.banner-slide {
+
+/* ===== 主视觉 ===== */
+.hero {
+  border-radius: 14px;
+  overflow: hidden;
+}
+.hero-slide {
   height: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 56px;
-  color: #fff;
+  /* 极简米色/墨色调，不用刺眼渐变 */
+  background:
+    radial-gradient(120% 140% at 85% 15%, #f3efe9 0%, #e9e4dc 55%, #ded7cc 100%);
+  position: relative;
 }
-.banner-eyebrow {
+.hero-slide::after {
+  /* 一道极淡的高光，制造质感 */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, rgba(255, 255, 255, 0.5), transparent 42%);
+  pointer-events: none;
+}
+.hero-inner {
+  padding: 0 64px;
+  position: relative;
+  z-index: 1;
+}
+.hero-eyebrow {
   display: inline-block;
-  background: rgba(0, 0, 0, 0.18);
-  padding: 3px 12px;
-  border-radius: var(--radius-sm);
-  font-size: var(--fz-sm);
-  margin-bottom: var(--sp-3);
+  font-size: 12px;
+  letter-spacing: 3px;
+  color: var(--ink-2);
+  text-transform: uppercase;
+  margin-bottom: 12px;
 }
-.banner-title {
-  font-size: var(--fz-2xl);
-  font-weight: 800;
-  margin-bottom: var(--sp-2);
+.hero-title {
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--ink);
+  line-height: 1.25;
+  margin-bottom: 10px;
 }
-.banner-sub {
-  font-size: var(--fz-md);
-  opacity: 0.92;
+.hero-sub {
+  font-size: 15px;
+  color: var(--ink-2);
+  letter-spacing: 1px;
+  font-weight: 300;
 }
-.banner-price {
-  font-size: 64px;
-  font-weight: 900;
-  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
+.hero-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 14px 0 0;
+}
+.hero-dot {
+  width: 22px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--line);
+  transition: background 0.3s;
+}
+.hero-dot.active {
+  background: var(--ink);
 }
 
-/* 分类条贴在 banner 下 */
+/* ===== 分类条 ===== */
 .cat-bar {
-  margin-top: var(--sp-4);
+  display: flex;
+  gap: 28px;
+  margin: 36px 0 4px;
+  border-bottom: 1px solid var(--line);
+}
+.cat-item {
+  position: relative;
+  padding: 0 0 14px;
+  font-size: 14px;
+  color: var(--ink-2);
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: color 0.2s;
+}
+.cat-item:hover {
+  color: var(--ink);
+}
+.cat-item.active {
+  color: var(--ink);
+  font-weight: 500;
+}
+.cat-item.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--ink);
 }
 
-/* 标题行 + 排序 */
+/* ===== 标题 + 排序 ===== */
 .list-head {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
+  margin: 32px 0 20px;
+}
+.head-title {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--ink);
 }
 .sort-bar {
   display: flex;
-  gap: var(--sp-2);
+  gap: 22px;
 }
 .sort-item {
-  font-size: var(--fz-sm);
-  color: var(--c-text-2);
-  padding: 2px 12px;
-  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--ink-3);
   cursor: pointer;
-  border: 1px solid var(--c-border);
-  transition: all 0.15s;
+  letter-spacing: 1px;
+  transition: color 0.2s;
 }
 .sort-item:hover {
-  color: var(--c-primary);
+  color: var(--ink);
 }
 .sort-item.active {
-  color: #fff;
-  background: var(--c-primary);
-  border-color: var(--c-primary);
+  color: var(--ink);
+  font-weight: 500;
 }
 
-/* 分页 */
-.pager {
-  display: flex;
-  justify-content: center;
-  margin: var(--sp-5) 0;
-}
-.price-suffix {
-  font-size: var(--fz-xs);
-  color: var(--c-text-3);
-  margin-left: 2px;
-}
-
-/* 商品网格 */
+/* ===== 商品网格 ===== */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: var(--sp-3);
+  grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+  gap: 28px 22px;
   min-height: 200px;
 }
 .goods-card {
-  overflow: hidden;
   cursor: pointer;
+  background: transparent;
 }
 .cover {
   position: relative;
-  height: 220px;
-  background: #f5f5f5;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--paper);
 }
 .cover-img {
   width: 100%;
   height: 100%;
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.goods-card:hover .cover-img {
+  transform: scale(1.04);
 }
 .cover-placeholder {
   width: 100%;
-  height: 220px;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 56px;
-  color: #d0d0d0;
-  background: linear-gradient(135deg, #fafafa, #f0f0f0);
+  font-size: 48px;
+  font-weight: 300;
+  color: #cfc9bf;
+  background: linear-gradient(135deg, #f7f4ef, #ece7df);
 }
-.corner {
+.cover-tag {
   position: absolute;
-  left: 0;
-  top: 10px;
-  background: var(--c-primary);
-  color: #fff;
-  font-size: var(--fz-xs);
-  padding: 2px 10px;
-  font-weight: 600;
+  left: 12px;
+  top: 12px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(6px);
+  color: var(--ink);
+  font-size: 11px;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  border-radius: 999px;
 }
 .info {
-  padding: var(--sp-3);
+  padding: 14px 2px 0;
 }
 .goods-title {
-  font-size: var(--fz-base);
-  line-height: 1.4;
-  height: 40px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  letter-spacing: 0.5px;
+  height: 42px;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -323,33 +404,57 @@ onMounted(() => {
 }
 .price-line {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
-  margin: var(--sp-2) 0;
-  min-height: 24px;
+  margin-top: 10px;
 }
-.price-line .price {
-  font-size: var(--fz-lg);
+.price {
+  color: var(--ink);
+  display: flex;
+  align-items: baseline;
 }
-.cat-tag {
-  font-size: var(--fz-xs);
-  color: var(--c-text-3);
-  border: 1px solid var(--c-border);
-  border-radius: var(--radius-sm);
-  padding: 1px 6px;
+.price .symbol {
+  font-size: 13px;
+  margin-right: 1px;
 }
-.buy-btn {
-  width: 100%;
-  background: var(--c-primary);
+.price-num {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.price-suffix {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-left: 3px;
+}
+.go-detail {
+  font-size: 12px;
+  color: var(--ink-3);
+  letter-spacing: 1px;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: all 0.25s;
+}
+.goods-card:hover .go-detail {
+  opacity: 1;
+  transform: translateX(0);
+  color: var(--ink);
+}
+
+/* ===== 分页 ===== */
+.pager {
+  display: flex;
+  justify-content: center;
+  margin: 48px 0 24px;
+}
+:deep(.el-pagination.is-background .el-pager li),
+:deep(.el-pagination .btn-prev),
+:deep(.el-pagination .btn-next) {
+  background: transparent;
+  color: var(--ink-2);
+}
+:deep(.el-pagination.is-background .el-pager li.is-active) {
+  background: var(--ink);
   color: #fff;
-  border: none;
-  padding: 8px 0;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-size: var(--fz-base);
-  transition: background 0.2s;
-}
-.buy-btn:hover {
-  background: var(--c-primary-dark);
 }
 </style>

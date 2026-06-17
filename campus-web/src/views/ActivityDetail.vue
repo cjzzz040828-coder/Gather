@@ -88,7 +88,7 @@
                   <el-progress
                     :percentage="Math.round((t.lockCount / t.targetCount) * 100)"
                     :stroke-width="8"
-                    color="#e1251b"
+                    color="#1c1c1e"
                   />
                 </div>
                 <div class="team-ops">
@@ -407,11 +407,11 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* 活动头部：京东红促销条 */
+/* 活动头部：墨色质感条 */
 .act-hero {
-  background: linear-gradient(120deg, #e1251b, #ff6a00);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
+  background: linear-gradient(120deg, #2a2a2e 0%, #1c1c1e 60%, #111114 100%);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
   padding: var(--sp-6);
   display: flex;
   justify-content: space-between;
