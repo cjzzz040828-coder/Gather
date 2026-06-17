@@ -79,6 +79,12 @@
                     </span>
                     <span class="team-count">还差 {{ t.targetCount - t.lockCount }} 人成团</span>
                   </div>
+                  <div class="team-countdown">
+                    <span class="cd-label">剩余</span>
+                    <span class="cd-time" :class="{ ended: formatCountdown(t.validEndTime) === '已结束' }">
+                      {{ formatCountdown(t.validEndTime) }}
+                    </span>
+                  </div>
                   <el-progress
                     :percentage="Math.round((t.lockCount / t.targetCount) * 100)"
                     :stroke-width="8"
@@ -119,6 +125,40 @@
       </div>
     </template>
 
+    <!-- 收货地址选择对话框 -->
+    <el-dialog v-model="addressDialog" title="选择收货地址" width="460px">
+      <div class="addr-select">
+        <label
+          v-for="a in addresses"
+          :key="a.id"
+          class="addr-opt"
+          :class="{ active: selectedAddressId === a.id }"
+        >
+          <input
+            type="radio"
+            name="addr"
+            :value="a.id"
+            :checked="selectedAddressId === a.id"
+            @change="selectedAddressId = a.id!"
+          />
+          <div class="addr-opt-body">
+            <div class="addr-opt-l1">
+              <b>{{ a.receiver }}</b>
+              <span>{{ a.phone }}</span>
+              <el-tag v-if="a.isDefault === 1" type="danger" size="small" effect="dark">默认</el-tag>
+            </div>
+            <div class="addr-opt-l2">
+              {{ [a.province, a.city, a.district].filter(Boolean).join(' ') }} {{ a.detail }}
+            </div>
+          </div>
+        </label>
+      </div>
+      <template #footer>
+        <el-button @click="$router.push('/address')">管理地址</el-button>
+        <el-button type="danger" :loading="locking" @click="confirmLock">确认，去支付</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 支付对话框 -->
     <el-dialog v-model="payDialog" title="模拟支付" width="400px" :close-on-click-modal="false">
       <div class="pay-body">
@@ -149,9 +189,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { addressApi, type UserAddress } from '@/api/address'
 import {
   groupbuyApi,
   type ActivityDetailVO,
@@ -180,7 +221,35 @@ const invitedTeamId = ref<number | null>(
 const shareTeamId = ref<number | null>(null)
 const shareDialog = ref(false)
 
+// 收货地址选择（下单前）
+const addresses = ref<UserAddress[]>([])
+const addressDialog = ref(false)
+const selectedAddressId = ref<number | null>(null)
+const pendingTeamId = ref<number | null>(null)
+
+async function loadAddresses() {
+  addresses.value = (await addressApi.list()) || []
+}
+
 const activityId = () => Number(route.params.id)
+
+// 倒计时：每秒 tick 触发重算，团/订单按各自 validEndTime 计算剩余
+const now = ref(Date.now())
+let timer: ReturnType<typeof setInterval> | null = null
+
+function formatCountdown(endTime?: string): string {
+  if (!endTime) return ''
+  // 后端时间格式 "2026-07-16 22:21:46" 或带 T，统一替换确保跨浏览器可解析
+  const end = new Date(endTime.replace('T', ' ').replace(/-/g, '/')).getTime()
+  const diff = end - now.value
+  if (isNaN(end)) return ''
+  if (diff <= 0) return '已结束'
+  const h = Math.floor(diff / 3_600_000)
+  const m = Math.floor((diff % 3_600_000) / 60_000)
+  const s = Math.floor((diff % 60_000) / 1000)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(h)}:${pad(m)}:${pad(s)}`
+}
 
 function shareLink(teamId: number) {
   return `${window.location.origin}/activity/${activityId()}?teamId=${teamId}`
@@ -263,10 +332,40 @@ async function doTrial() {
 
 async function lock(teamId?: number) {
   if (!requireLogin()) return
+  // 先选收货地址再锁单
+  pendingTeamId.value = teamId ?? null
+  await loadAddresses()
+  if (addresses.value.length === 0) {
+    ElMessageBox.confirm('您还没有收货地址，去添加一个吧', '提示', {
+      confirmButtonText: '去添加',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+      .then(() => router.push('/address'))
+      .catch(() => null)
+    return
+  }
+  // 默认选中默认地址，否则第一个
+  const def = addresses.value.find((a) => a.isDefault === 1)
+  selectedAddressId.value = def ? def.id! : addresses.value[0].id!
+  addressDialog.value = true
+}
+
+// 选定地址后真正锁单
+async function confirmLock() {
+  if (!selectedAddressId.value) {
+    ElMessage.warning('请选择收货地址')
+    return
+  }
   locking.value = true
   try {
     if (!trial.value) trial.value = await groupbuyApi.trial(activityId())
-    lockResult.value = await groupbuyApi.lock({ activityId: activityId(), teamId })
+    lockResult.value = await groupbuyApi.lock({
+      activityId: activityId(),
+      teamId: pendingTeamId.value ?? undefined,
+      addressId: selectedAddressId.value
+    })
+    addressDialog.value = false
     payDialog.value = true
   } finally {
     locking.value = false
@@ -297,7 +396,14 @@ async function doPay() {
   }
 }
 
-onMounted(load)
+onMounted(() => {
+  load()
+  timer = setInterval(() => (now.value = Date.now()), 1000)
+})
+
+onUnmounted(() => {
+  if (timer) clearInterval(timer)
+})
 </script>
 
 <style scoped>
@@ -517,5 +623,64 @@ onMounted(load)
 .share-link-row {
   display: flex;
   gap: var(--sp-2);
+}
+
+/* 团倒计时 */
+.team-countdown {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: 6px;
+}
+.cd-label {
+  font-size: var(--fz-xs);
+  color: var(--c-text-3);
+}
+.cd-time {
+  font-size: var(--fz-sm);
+  font-weight: 700;
+  color: var(--c-primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.5px;
+}
+.cd-time.ended {
+  color: var(--c-text-3);
+  font-weight: 400;
+}
+
+/* 地址选择 */
+.addr-select {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  max-height: 320px;
+  overflow-y: auto;
+}
+.addr-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.addr-opt.active {
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 2px var(--c-primary-light);
+}
+.addr-opt-body {
+  flex: 1;
+}
+.addr-opt-l1 {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: 4px;
+}
+.addr-opt-l2 {
+  color: var(--c-text-2);
+  font-size: var(--fz-sm);
 }
 </style>

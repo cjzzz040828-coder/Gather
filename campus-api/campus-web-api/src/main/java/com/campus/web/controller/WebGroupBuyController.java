@@ -43,6 +43,30 @@ public class WebGroupBuyController {
     }
 
     /**
+     * 上架商品分页（公开，含最低价、分类筛选、价格排序）
+     */
+    @GetMapping("/goods/page")
+    public Result<GoodsPageVO> goodsPage(@RequestParam(defaultValue = "1") Integer page,
+                                         @RequestParam(defaultValue = "12") Integer pageSize,
+                                         @RequestParam(required = false) String title,
+                                         @RequestParam(required = false) String category,
+                                         @RequestParam(required = false) String sort) {
+        var p = gbGoodsService.webPage(page, pageSize, title, category, sort);
+        GoodsPageVO vo = new GoodsPageVO();
+        vo.setList(p.getRecords());
+        vo.setTotal(p.getTotal());
+        return Result.ok(vo);
+    }
+
+    /**
+     * 上架商品分类列表（公开）
+     */
+    @GetMapping("/goods/categories")
+    public Result<List<String>> goodsCategories() {
+        return Result.ok(gbGoodsService.listCategories());
+    }
+
+    /**
      * 商品详情（含 SKU，公开）
      */
     @GetMapping("/goods/{id}")
@@ -118,6 +142,12 @@ public class WebGroupBuyController {
     public static class GoodsDetailVO {
         private GbGoods goods;
         private List<GbSku> skus;
+    }
+
+    @Data
+    public static class GoodsPageVO {
+        private List<GbGoods> list;
+        private Long total;
     }
 
     @Data

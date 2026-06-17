@@ -50,7 +50,9 @@
             </span>
             <template #dropdown>
               <el-dropdown-menu>
+                <el-dropdown-item command="profile">个人中心</el-dropdown-item>
                 <el-dropdown-item command="orders">我的拼单</el-dropdown-item>
+                <el-dropdown-item command="address">收货地址</el-dropdown-item>
                 <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -106,7 +108,9 @@ function doSearch() {
 }
 
 function onCommand(command: string) {
-  if (command === 'orders') router.push('/my-orders')
+  if (command === 'profile') router.push('/profile')
+  else if (command === 'orders') router.push('/my-orders')
+  else if (command === 'address') router.push('/address')
   else if (command === 'logout') userStore.logout()
 }
 </script>

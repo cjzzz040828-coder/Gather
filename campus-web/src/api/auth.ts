@@ -57,5 +57,34 @@ export const authApi = {
 
   getInfo(): Promise<UserInfoResult> {
     return request({ url: '/web/auth/info', method: 'get' })
+  },
+
+  getProfile(): Promise<UserInfo> {
+    return request({ url: '/web/auth/profile', method: 'get' })
+  },
+
+  updateProfile(data: Partial<UserInfo>): Promise<void> {
+    return request({ url: '/web/auth/profile', method: 'put', data })
+  },
+
+  // 修改密码（旧/新密码均 RSA 加密）
+  async changePassword(oldPassword: string, newPassword: string): Promise<void> {
+    const payload = await encryptPasswordFields(
+      { oldPassword, newPassword },
+      ['oldPassword', 'newPassword']
+    )
+    return request({ url: '/web/auth/password', method: 'post', data: payload })
+  },
+
+  // 上传头像，返回图片 URL
+  uploadAvatar(file: File): Promise<string> {
+    const form = new FormData()
+    form.append('file', file)
+    return request({
+      url: '/web/auth/avatar',
+      method: 'post',
+      data: form,
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
   }
 }

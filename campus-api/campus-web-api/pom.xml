@@ -30,6 +30,11 @@
             <groupId>com.campus</groupId>
             <artifactId>campus-biz</artifactId>
         </dependency>
+        <!-- 文件模块（头像上传） -->
+        <dependency>
+            <groupId>com.campus</groupId>
+            <artifactId>campus-file</artifactId>
+        </dependency>
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>

@@ -1,9 +1,12 @@
 package com.campus.biz.groupbuy.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.campus.common.entity.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import java.math.BigDecimal;
 
 /**
  * 拼团商品
@@ -30,4 +33,8 @@ public class GbGoods extends BaseEntity {
 
     /** 状态(0-下架 1-上架) */
     private Integer status;
+
+    /** 最低 SKU 价（非数据库字段，列表查询时 join 计算，用于展示与排序） */
+    @TableField(exist = false)
+    private BigDecimal minPrice;
 }

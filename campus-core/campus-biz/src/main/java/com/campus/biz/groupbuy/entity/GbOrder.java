@@ -45,4 +45,13 @@ public class GbOrder extends BaseEntity {
 
     /** 支付时间 */
     private LocalDateTime payTime;
+
+    /** 收货人快照 */
+    private String receiver;
+
+    /** 电话快照 */
+    private String phone;
+
+    /** 收货地址快照 */
+    private String address;
 }

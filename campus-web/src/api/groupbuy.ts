@@ -10,6 +10,12 @@ export interface GbGoods {
   detail: string
   category: string
   status: number
+  minPrice?: number
+}
+
+export interface GoodsPageResult {
+  list: GbGoods[]
+  total: number
 }
 
 export interface GbSku {
@@ -65,6 +71,9 @@ export interface GbOrder {
   payAmount: number
   status: number // 0锁定 1已支付 2成团 3退款
   payTime: string
+  receiver?: string
+  phone?: string
+  address?: string
 }
 
 export interface GoodsDetailVO {
@@ -101,6 +110,18 @@ export const groupbuyApi = {
   goodsList(title?: string): Promise<GbGoods[]> {
     return request({ url: '/web/groupbuy/goods', method: 'get', params: { title } })
   },
+  goodsPage(params: {
+    page: number
+    pageSize: number
+    title?: string
+    category?: string
+    sort?: string
+  }): Promise<GoodsPageResult> {
+    return request({ url: '/web/groupbuy/goods/page', method: 'get', params })
+  },
+  goodsCategories(): Promise<string[]> {
+    return request({ url: '/web/groupbuy/goods/categories', method: 'get' })
+  },
   goodsDetail(id: number): Promise<GoodsDetailVO> {
     return request({ url: `/web/groupbuy/goods/${id}`, method: 'get' })
   },
@@ -115,7 +136,7 @@ export const groupbuyApi = {
   trial(activityId: number): Promise<TrialResult> {
     return request({ url: '/web/groupbuy/trial', method: 'get', params: { activityId } })
   },
-  lock(data: { activityId: number; teamId?: number }): Promise<LockOrderResult> {
+  lock(data: { activityId: number; teamId?: number; addressId: number }): Promise<LockOrderResult> {
     return request({ url: '/web/groupbuy/lock', method: 'post', data })
   },
   payCallback(outTradeNo: string): Promise<void> {

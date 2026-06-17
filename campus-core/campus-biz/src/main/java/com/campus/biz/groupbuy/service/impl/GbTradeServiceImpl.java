@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.campus.biz.groupbuy.dto.LockOrderDTO;
 import com.campus.biz.groupbuy.dto.LockOrderResultDTO;
 import com.campus.biz.groupbuy.dto.TrialResultDTO;
+import com.campus.biz.groupbuy.address.UserAddress;
+import com.campus.biz.groupbuy.address.UserAddressService;
 import com.campus.biz.groupbuy.discount.DiscountContext;
 import com.campus.biz.groupbuy.discount.DiscountCalculatorFactory;
 import com.campus.biz.groupbuy.entity.*;
@@ -63,6 +65,7 @@ public class GbTradeServiceImpl implements GbTradeService {
     private final AccessGuard accessGuard;
     private final RedissonClient redissonClient;
     private final SeatService seatService;
+    private final UserAddressService addressService;
 
     private static final int ACTIVITY_STATUS_RUNNING = 1;
     private static final int TEAM_STATUS_GROUPING = 0;
@@ -94,6 +97,15 @@ public class GbTradeServiceImpl implements GbTradeService {
             throw new BusinessException("库存不足");
         }
 
+        // 校验收货地址（实物商品必填，校验归属当前用户）
+        if (dto.getAddressId() == null) {
+            throw new BusinessException("请先选择收货地址");
+        }
+        UserAddress address = addressService.getMine(dto.getAddressId(), userId);
+        if (address == null) {
+            throw new BusinessException("收货地址不存在");
+        }
+
         // 试算实付价
         BigDecimal originalPrice = sku.getOriginalPrice();
         BigDecimal payPrice = applyBestDiscount(dto.getActivityId(), originalPrice, accessGuard.userCrowdTag(userId));
@@ -117,7 +129,7 @@ public class GbTradeServiceImpl implements GbTradeService {
             // Redis 原子递增 + SetNx 兜底占位抢名额（前置闸门）
             seatService.acquire(team.getId(), userId, activity.getTargetCount());
             try {
-                return doLockOrder(dto, activity, sku, team, userId, originalPrice, payPrice);
+                return doLockOrder(dto, activity, sku, team, userId, originalPrice, payPrice, address);
             } catch (RuntimeException e) {
                 // 下单失败，释放已抢占的 Redis 名额（DB 由事务回滚）
                 seatService.release(team.getId(), userId);
@@ -135,7 +147,8 @@ public class GbTradeServiceImpl implements GbTradeService {
      */
     private LockOrderResultDTO doLockOrder(LockOrderDTO dto, GbActivity activity, GbSku sku,
                                            GbTeam team, Long userId,
-                                           BigDecimal originalPrice, BigDecimal payPrice) {
+                                           BigDecimal originalPrice, BigDecimal payPrice,
+                                           UserAddress address) {
         // 防止同一用户在同一团内重复锁单
         Long dup = orderMapper.selectCount(new LambdaQueryWrapper<GbOrder>()
                 .eq(GbOrder::getTeamId, team.getId())
@@ -156,6 +169,10 @@ public class GbTradeServiceImpl implements GbTradeService {
         order.setPayAmount(payPrice);
         order.setDeductionAmount(originalPrice.subtract(payPrice));
         order.setStatus(ORDER_STATUS_LOCKED);
+        // 收货地址快照（固化下单时的地址，后续地址修改不影响本单）
+        order.setReceiver(address.getReceiver());
+        order.setPhone(address.getPhone());
+        order.setAddress(buildAddressText(address));
         try {
             orderMapper.insert(order);
         } catch (DuplicateKeyException e) {
@@ -335,5 +352,15 @@ public class GbTradeServiceImpl implements GbTradeService {
         team.setValidEndTime(LocalDateTime.now().plusMinutes(activity.getTimeLimitMinutes()));
         teamMapper.insert(team);
         return team;
+    }
+
+    /** 拼接收货地址快照文本：省市区 + 详细 + 收货人电话 */
+    private String buildAddressText(UserAddress a) {
+        StringBuilder sb = new StringBuilder();
+        if (a.getProvince() != null) sb.append(a.getProvince());
+        if (a.getCity() != null) sb.append(a.getCity());
+        if (a.getDistrict() != null) sb.append(a.getDistrict());
+        if (a.getDetail() != null) sb.append(a.getDetail());
+        return sb.toString();
     }
 }

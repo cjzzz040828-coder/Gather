@@ -18,6 +18,16 @@ public interface GbGoodsService extends IService<GbGoods> {
     Page<GbGoods> adminPage(Integer page, Integer pageSize, String title, Integer status);
 
     /**
+     * C 端分页（只查上架，含最低价，支持分类筛选与价格排序）
+     */
+    Page<GbGoods> webPage(Integer page, Integer pageSize, String title, String category, String sort);
+
+    /**
+     * 上架商品的去重分类列表
+     */
+    List<String> listCategories();
+
+    /**
      * 新建/更新商品及其 SKU 列表（整单保存）
      */
     Long saveGoods(GbGoods goods, List<GbSku> skus);

@@ -19,7 +19,7 @@
       <span
         class="cat-item"
         :class="{ active: selectedCat === '' }"
-        @click="selectedCat = ''"
+        @click="selectCat('')"
         >全部</span
       >
       <span
@@ -27,24 +27,44 @@
         :key="cat"
         class="cat-item"
         :class="{ active: selectedCat === cat }"
-        @click="selectedCat = cat"
+        @click="selectCat(cat)"
         >{{ cat }}</span
       >
     </div>
 
-    <!-- 标题 -->
-    <div class="section-title">
+    <!-- 标题 + 排序 -->
+    <div class="section-title list-head">
       <span>{{ keyword ? `“${keyword}” 的搜索结果` : '为你推荐' }}</span>
+      <div class="sort-bar">
+        <span
+          class="sort-item"
+          :class="{ active: sort === 'newest' }"
+          @click="changeSort('newest')"
+          >最新</span
+        >
+        <span
+          class="sort-item"
+          :class="{ active: sort === 'price_asc' }"
+          @click="changeSort('price_asc')"
+          >价格↑</span
+        >
+        <span
+          class="sort-item"
+          :class="{ active: sort === 'price_desc' }"
+          @click="changeSort('price_desc')"
+          >价格↓</span
+        >
+      </div>
     </div>
 
     <!-- 商品网格 -->
     <div v-loading="loading" class="grid">
       <el-empty
-        v-if="!loading && filteredGoods.length === 0"
+        v-if="!loading && goods.length === 0"
         description="暂无在售拼团商品"
       />
       <div
-        v-for="item in filteredGoods"
+        v-for="item in goods"
         :key="item.id"
         class="goods-card jd-card hoverable"
         @click="goDetail(item.id)"
@@ -60,18 +80,33 @@
         <div class="info">
           <div class="goods-title">{{ item.title }}</div>
           <div class="price-line">
-            <span class="price"><span class="symbol">¥</span>拼团价</span>
+            <span class="price">
+              <span class="symbol">¥</span>{{ item.minPrice != null ? item.minPrice : '—' }}
+              <span class="price-suffix">起</span>
+            </span>
             <span v-if="item.category" class="cat-tag">{{ item.category }}</span>
           </div>
           <button class="buy-btn" @click.stop="goDetail(item.id)">立即拼团</button>
         </div>
       </div>
     </div>
+
+    <!-- 分页 -->
+    <div v-if="total > pageSize" class="pager">
+      <el-pagination
+        layout="prev, pager, next, total"
+        :total="total"
+        :page-size="pageSize"
+        :current-page="page"
+        background
+        @current-change="onPageChange"
+      />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { groupbuyApi, type GbGoods } from '@/api/groupbuy'
 
@@ -81,6 +116,11 @@ const goods = ref<GbGoods[]>([])
 const keyword = ref((route.query.q as string) || '')
 const loading = ref(false)
 const selectedCat = ref('')
+const categories = ref<string[]>([])
+const sort = ref('newest')
+const page = ref(1)
+const pageSize = ref(12)
+const total = ref(0)
 
 const banners = [
   { eyebrow: '限时拼团', title: '省钱就要一起拼', sub: '邀好友组团，拼得越多省得越多', price: '¥99 起', bg: 'linear-gradient(120deg,#e1251b,#ff6a00)' },
@@ -88,27 +128,43 @@ const banners = [
   { eyebrow: '精选好物', title: '同学都在拼的优惠', sub: '实时进度看得见，成团享低价', price: '一起省', bg: 'linear-gradient(120deg,#ff6a00,#ff9a3d)' }
 ]
 
-// 从商品中去重出分类
-const categories = computed(() => {
-  const set = new Set<string>()
-  goods.value.forEach((g) => g.category && set.add(g.category))
-  return [...set]
-})
-
-// 按分类前端筛选（关键词由后端 load 处理）
-const filteredGoods = computed(() => {
-  if (!selectedCat.value) return goods.value
-  return goods.value.filter((g) => g.category === selectedCat.value)
-})
+async function loadCategories() {
+  categories.value = (await groupbuyApi.goodsCategories()) || []
+}
 
 async function load() {
   loading.value = true
   try {
-    goods.value = (await groupbuyApi.goodsList(keyword.value || undefined)) || []
-    selectedCat.value = ''
+    const res = await groupbuyApi.goodsPage({
+      page: page.value,
+      pageSize: pageSize.value,
+      title: keyword.value || undefined,
+      category: selectedCat.value || undefined,
+      sort: sort.value
+    })
+    goods.value = res?.list || []
+    total.value = res?.total || 0
   } finally {
     loading.value = false
   }
+}
+
+function selectCat(cat: string) {
+  selectedCat.value = cat
+  page.value = 1
+  load()
+}
+
+function changeSort(s: string) {
+  sort.value = s
+  page.value = 1
+  load()
+}
+
+function onPageChange(p: number) {
+  page.value = p
+  load()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 function goDetail(id: number) {
@@ -119,11 +175,15 @@ watch(
   () => route.query.q,
   (q) => {
     keyword.value = (q as string) || ''
+    page.value = 1
     load()
   }
 )
 
-load()
+onMounted(() => {
+  loadCategories()
+  load()
+})
 </script>
 
 <style scoped>
@@ -167,6 +227,46 @@ load()
 /* 分类条贴在 banner 下 */
 .cat-bar {
   margin-top: var(--sp-4);
+}
+
+/* 标题行 + 排序 */
+.list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sort-bar {
+  display: flex;
+  gap: var(--sp-2);
+}
+.sort-item {
+  font-size: var(--fz-sm);
+  color: var(--c-text-2);
+  padding: 2px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border: 1px solid var(--c-border);
+  transition: all 0.15s;
+}
+.sort-item:hover {
+  color: var(--c-primary);
+}
+.sort-item.active {
+  color: #fff;
+  background: var(--c-primary);
+  border-color: var(--c-primary);
+}
+
+/* 分页 */
+.pager {
+  display: flex;
+  justify-content: center;
+  margin: var(--sp-5) 0;
+}
+.price-suffix {
+  font-size: var(--fz-xs);
+  color: var(--c-text-3);
+  margin-left: 2px;
 }
 
 /* 商品网格 */

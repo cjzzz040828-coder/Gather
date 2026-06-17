@@ -20,6 +20,9 @@
           <div class="oc-time">
             {{ o.payTime ? o.payTime.replace('T', ' ').slice(0, 16) : '未支付' }}
           </div>
+          <div v-if="o.receiver" class="oc-addr">
+            收货：{{ o.receiver }} {{ o.phone }} · {{ o.address }}
+          </div>
         </div>
         <div class="col-amount">
           <span class="price"><span class="symbol">¥</span>{{ o.payAmount }}</span>
@@ -53,7 +56,10 @@
           <el-tag :type="teamStatusTag(team.status).type" effect="dark" size="large">
             {{ teamStatusTag(team.status).text }}
           </el-tag>
-          <p class="tp-deadline">
+          <p v-if="team.status === 0" class="tp-deadline">
+            剩余 <b class="cd">{{ formatCountdown(team.validEndTime) }}</b>
+          </p>
+          <p v-else class="tp-deadline">
             截止：{{
               team.validEndTime ? team.validEndTime.replace('T', ' ').slice(0, 16) : '-'
             }}
@@ -65,13 +71,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { groupbuyApi, type GbOrder, type GbTeam } from '@/api/groupbuy'
 
 const orders = ref<GbOrder[]>([])
 const loading = ref(false)
 const teamDialog = ref(false)
 const team = ref<GbTeam | null>(null)
+
+// 倒计时
+const now = ref(Date.now())
+let timer: ReturnType<typeof setInterval> | null = null
+
+function formatCountdown(endTime?: string): string {
+  if (!endTime) return ''
+  const end = new Date(endTime.replace('T', ' ').replace(/-/g, '/')).getTime()
+  const diff = end - now.value
+  if (isNaN(end)) return ''
+  if (diff <= 0) return '已结束'
+  const h = Math.floor(diff / 3_600_000)
+  const m = Math.floor((diff % 3_600_000) / 60_000)
+  const s = Math.floor((diff % 60_000) / 1000)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(h)}:${pad(m)}:${pad(s)}`
+}
 
 function statusText(s: number) {
   return { 0: '待支付', 1: '已支付', 2: '已成团', 3: '已退款' }[s] || '未知'
@@ -98,7 +121,14 @@ async function viewTeam(teamId: number) {
   teamDialog.value = true
 }
 
-onMounted(load)
+onMounted(() => {
+  load()
+  timer = setInterval(() => (now.value = Date.now()), 1000)
+})
+
+onUnmounted(() => {
+  if (timer) clearInterval(timer)
+})
 </script>
 
 <style scoped>
@@ -138,6 +168,11 @@ onMounted(load)
 .oc-time {
   color: var(--c-text-3);
   font-size: var(--fz-sm);
+}
+.oc-addr {
+  color: var(--c-text-2);
+  font-size: var(--fz-xs);
+  margin-top: 4px;
 }
 .col-amount {
   display: flex;
@@ -200,5 +235,10 @@ onMounted(load)
   color: var(--c-text-3);
   font-size: var(--fz-sm);
   margin-top: var(--sp-3);
+}
+.tp-deadline .cd {
+  color: var(--c-primary);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 </style>

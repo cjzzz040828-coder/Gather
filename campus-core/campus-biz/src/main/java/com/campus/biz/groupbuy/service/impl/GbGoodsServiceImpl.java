@@ -44,6 +44,19 @@ public class GbGoodsServiceImpl extends ServiceImpl<GbGoodsMapper, GbGoods> impl
     }
 
     @Override
+    public Page<GbGoods> webPage(Integer page, Integer pageSize, String title, String category, String sort) {
+        // sort 白名单，避免非法值落入 SQL 排序分支
+        String safeSort = "price_asc".equals(sort) || "price_desc".equals(sort) ? sort : "newest";
+        Page<GbGoods> p = new Page<>(page == null ? 1 : page, pageSize == null ? 12 : pageSize);
+        return (Page<GbGoods>) baseMapper.selectWebPage(p, category, title, safeSort);
+    }
+
+    @Override
+    public List<String> listCategories() {
+        return baseMapper.selectCategories();
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public Long saveGoods(GbGoods goods, List<GbSku> skus) {
         if (!StringUtils.hasText(goods.getTitle())) {
