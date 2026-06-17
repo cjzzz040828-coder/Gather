@@ -20,4 +20,9 @@ public interface GbOrderService extends IService<GbOrder> {
      * 我的拼单（按用户，倒序）
      */
     List<GbOrder> listMine(Long userId);
+
+    /**
+     * 取我的某笔订单（校验归属，越权/不存在返回 null）
+     */
+    GbOrder getMineOrder(Long id, Long userId);
 }

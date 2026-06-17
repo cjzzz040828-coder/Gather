@@ -131,6 +131,37 @@ public class WebGroupBuyController {
     }
 
     /**
+     * 订单详情（需登录，校验归属，含商品/活动/团信息）
+     */
+    @GetMapping("/order/{id}")
+    public Result<OrderDetailVO> orderDetail(@PathVariable Long id) {
+        Long userId = StpUtil.getLoginIdAsLong();
+        GbOrder order = gbOrderService.getMineOrder(id, userId);
+        if (order == null) {
+            return Result.ok(null);
+        }
+        OrderDetailVO vo = new OrderDetailVO();
+        vo.setOrder(order);
+        GbActivity activity = gbActivityService.getById(order.getActivityId());
+        vo.setActivity(activity);
+        if (activity != null) {
+            vo.setGoods(gbGoodsService.getById(activity.getGoodsId()));
+        }
+        vo.setTeam(gbTeamService.getById(order.getTeamId()));
+        return Result.ok(vo);
+    }
+
+    /**
+     * 主动取消/退款（需登录，仅锁定/已付未成团可退，记录原因）
+     */
+    @PostMapping("/order/{id}/cancel")
+    public Result<Void> cancelOrder(@PathVariable Long id, @RequestBody CancelOrderRequest req) {
+        gbTradeService.cancelMyOrder(id, StpUtil.getLoginIdAsLong(),
+                req == null ? null : req.getReason());
+        return Result.ok();
+    }
+
+    /**
      * 组队进度（需登录）
      */
     @GetMapping("/team/{id}")
@@ -160,5 +191,18 @@ public class WebGroupBuyController {
     @Data
     public static class PayCallbackRequest {
         private String outTradeNo;
+    }
+
+    @Data
+    public static class CancelOrderRequest {
+        private String reason;
+    }
+
+    @Data
+    public static class OrderDetailVO {
+        private GbOrder order;
+        private GbGoods goods;
+        private GbActivity activity;
+        private GbTeam team;
     }
 }

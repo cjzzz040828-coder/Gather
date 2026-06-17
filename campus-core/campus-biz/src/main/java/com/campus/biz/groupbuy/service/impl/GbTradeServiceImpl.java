@@ -285,6 +285,74 @@ public class GbTradeServiceImpl implements GbTradeService {
         log.info("拼团超时失败收尾: teamId={}, activityId={}, 退单数={}", team.getId(), team.getActivityId(), orders.size());
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void cancelMyOrder(Long orderId, Long userId, String reason) {
+        GbOrder order = orderMapper.selectById(orderId);
+        if (order == null || !userId.equals(order.getUserId())) {
+            throw new BusinessException("订单不存在");
+        }
+        Integer st = order.getStatus();
+        if (st != null && st == 2) {
+            throw new BusinessException("订单已成团，无法取消");
+        }
+        if (st != null && st == 3) {
+            throw new BusinessException("订单已退款，请勿重复操作");
+        }
+        if (st == null || (st != 0 && st != 1)) {
+            throw new BusinessException("当前订单状态不可取消");
+        }
+
+        Long teamId = order.getTeamId();
+        // 按团加锁，与下单/收尾串行化，防并发
+        RLock lock = redissonClient.getLock(TEAM_LOCK_PREFIX + teamId);
+        boolean locked;
+        try {
+            locked = lock.tryLock(LOCK_WAIT_SEC, LOCK_LEASE_SEC, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new BusinessException("系统繁忙，请稍后重试");
+        }
+        if (!locked) {
+            throw new BusinessException("操作频繁，请稍后重试");
+        }
+        try {
+            // 二次校验：锁内重读，避免与成团/收尾竞争
+            GbOrder fresh = orderMapper.selectById(orderId);
+            if (fresh == null || (fresh.getStatus() != 0 && fresh.getStatus() != 1)) {
+                throw new BusinessException("订单状态已变化，无法取消");
+            }
+            GbTeam team = teamMapper.selectById(teamId);
+            if (team != null && team.getStatus() != null && team.getStatus() == 1) {
+                throw new BusinessException("拼团已成功，无法取消");
+            }
+            // 复用退单策略：锁定单仅归还库存，已付单走退款；均扣团锁单数
+            RefundContext ctx = new RefundContext(fresh, orderMapper, skuMapper, teamMapper, payServiceFactory);
+            RefundStrategy.from(fresh).refund(ctx);
+            // 记录退款原因
+            orderMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<GbOrder>()
+                    .eq(GbOrder::getId, orderId)
+                    .set(GbOrder::getRefundReason, reason));
+            // 释放该用户在团内抢占的 Redis 名额
+            seatService.release(teamId, userId);
+
+            // 团收尾：退款后重读，若团内已无人锁单则置团失败（活动列表不再展示该空团）
+            GbTeam after = teamMapper.selectById(teamId);
+            if (after != null && after.getStatus() != null && after.getStatus() == TEAM_STATUS_GROUPING
+                    && (after.getLockCount() == null || after.getLockCount() <= 0)) {
+                teamMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<GbTeam>()
+                        .eq(GbTeam::getId, teamId)
+                        .set(GbTeam::getStatus, TEAM_STATUS_FAILED));
+                log.info("退款后团已空，置失败: teamId={}", teamId);
+            }
+            log.info("用户主动取消订单: orderId={}, userId={}, 原状态={}, reason={}", orderId, userId, st, reason);
+        } finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
+    }
+
     // ===== 私有辅助 =====
 
     private GbActivity getRunningActivity(Long activityId) {

@@ -38,4 +38,13 @@ public class GbOrderServiceImpl extends ServiceImpl<GbOrderMapper, GbOrder> impl
                 .eq(GbOrder::getUserId, userId)
                 .orderByDesc(GbOrder::getId));
     }
+
+    @Override
+    public GbOrder getMineOrder(Long id, Long userId) {
+        GbOrder order = this.getById(id);
+        if (order == null || !userId.equals(order.getUserId())) {
+            return null;
+        }
+        return order;
+    }
 }

@@ -145,7 +145,20 @@ export const groupbuyApi = {
   myOrders(): Promise<GbOrder[]> {
     return request({ url: '/web/groupbuy/my-orders', method: 'get' })
   },
+  orderDetail(id: number): Promise<OrderDetailVO> {
+    return request({ url: `/web/groupbuy/order/${id}`, method: 'get' })
+  },
+  cancelOrder(id: number, reason: string): Promise<void> {
+    return request({ url: `/web/groupbuy/order/${id}/cancel`, method: 'post', data: { reason } })
+  },
   teamProgress(id: number): Promise<GbTeam> {
     return request({ url: `/web/groupbuy/team/${id}`, method: 'get' })
   }
+}
+
+export interface OrderDetailVO {
+  order: GbOrder
+  goods: GbGoods | null
+  activity: GbActivity | null
+  team: GbTeam | null
 }

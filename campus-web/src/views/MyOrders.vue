@@ -32,12 +32,38 @@
           <span class="status-badge" :class="`s${o.status}`">{{ statusText(o.status) }}</span>
         </div>
         <div class="col-op">
-          <el-button type="danger" plain size="small" @click="viewTeam(o.teamId)">
-            查看进度
+          <el-button text size="small" @click="goDetail(o.id)">详情</el-button>
+          <el-button text size="small" @click="viewTeam(o.teamId)">进度</el-button>
+          <el-button
+            v-if="o.status === 0 || o.status === 1"
+            type="danger"
+            text
+            size="small"
+            @click="openCancel(o)"
+          >
+            {{ o.status === 1 ? '退款' : '取消' }}
           </el-button>
         </div>
       </div>
     </div>
+
+    <!-- 取消/退款 原因弹窗 -->
+    <el-dialog v-model="cancelDialog" title="取消订单" width="420px">
+      <p class="cancel-tip">
+        {{ cancelTarget?.status === 1 ? '该订单已支付，取消将发起退款（演示环境为模拟退款）。' : '确认取消该未支付订单？' }}
+      </p>
+      <el-input
+        v-model="cancelReason"
+        type="textarea"
+        :rows="3"
+        maxlength="200"
+        placeholder="请填写取消/退款原因（选填）"
+      />
+      <template #footer>
+        <el-button @click="cancelDialog = false">再想想</el-button>
+        <el-button type="danger" :loading="canceling" @click="confirmCancel">确认取消</el-button>
+      </template>
+    </el-dialog>
 
     <el-dialog v-model="teamDialog" title="拼团进度" width="400px">
       <template v-if="team">
@@ -47,7 +73,7 @@
               type="circle"
               :percentage="Math.round((team.completeCount / team.targetCount) * 100)"
               :width="120"
-              color="#e1251b"
+              color="#1c1c1e"
             />
           </div>
           <p class="tp-line">
@@ -72,12 +98,44 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { groupbuyApi, type GbOrder, type GbTeam } from '@/api/groupbuy'
 
+const router = useRouter()
 const orders = ref<GbOrder[]>([])
 const loading = ref(false)
 const teamDialog = ref(false)
 const team = ref<GbTeam | null>(null)
+
+// 取消/退款
+const cancelDialog = ref(false)
+const cancelTarget = ref<GbOrder | null>(null)
+const cancelReason = ref('')
+const canceling = ref(false)
+
+function goDetail(id: number) {
+  router.push(`/order/${id}`)
+}
+
+function openCancel(o: GbOrder) {
+  cancelTarget.value = o
+  cancelReason.value = ''
+  cancelDialog.value = true
+}
+
+async function confirmCancel() {
+  if (!cancelTarget.value) return
+  canceling.value = true
+  try {
+    await groupbuyApi.cancelOrder(cancelTarget.value.id, cancelReason.value)
+    ElMessage.success(cancelTarget.value.status === 1 ? '退款已提交' : '订单已取消')
+    cancelDialog.value = false
+    await load()
+  } finally {
+    canceling.value = false
+  }
+}
 
 // 倒计时
 const now = ref(Date.now())
@@ -240,5 +298,11 @@ onUnmounted(() => {
   color: var(--c-primary);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+}
+.cancel-tip {
+  color: var(--c-text-2);
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 14px;
 }
 </style>

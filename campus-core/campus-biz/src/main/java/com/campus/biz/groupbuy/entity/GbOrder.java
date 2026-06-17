@@ -54,4 +54,7 @@ public class GbOrder extends BaseEntity {
 
     /** 收货地址快照 */
     private String address;
+
+    /** 退款原因 */
+    private String refundReason;
 }

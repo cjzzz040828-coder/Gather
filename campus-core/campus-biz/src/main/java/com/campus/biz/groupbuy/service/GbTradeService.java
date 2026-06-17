@@ -29,4 +29,10 @@ public interface GbTradeService {
      * @return 本轮处理的团数
      */
     int closeTimeoutTeams();
+
+    /**
+     * 用户主动取消/退款：仅 锁定(0)/已付未成团(1) 可退，已成团/已退款不可退。
+     * 复用退单策略归还库存与团人数，记录退款原因。
+     */
+    void cancelMyOrder(Long orderId, Long userId, String reason);
 }
