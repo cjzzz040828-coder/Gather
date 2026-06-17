@@ -61,16 +61,23 @@ public enum RefundStrategy {
         };
     }
 
-    /** 归还该订单占用的 1 件库存，并把团锁单数 -1。 */
+    /** 归还该订单占用的 1 件库存，并把团锁单数 -1；已付单同时把已支付人数 -1（与支付时 complete_count++ 对称）。 */
     protected static void restoreStockAndTeam(RefundContext ctx) {
         GbOrder order = ctx.getOrder();
         ctx.getSkuMapper().update(null, new LambdaUpdateWrapper<GbSku>()
                 .eq(GbSku::getId, order.getSkuId())
                 .setSql("stock = stock + 1"));
-        ctx.getTeamMapper().update(null, new LambdaUpdateWrapper<GbTeam>()
+
+        LambdaUpdateWrapper<GbTeam> teamUpdate = new LambdaUpdateWrapper<GbTeam>()
                 .eq(GbTeam::getId, order.getTeamId())
                 .gt(GbTeam::getLockCount, 0)
-                .setSql("lock_count = lock_count - 1"));
+                .setSql("lock_count = lock_count - 1");
+        // 已支付订单退款：已支付人数也要回退（支付结算时 complete_count 加过）
+        if (order.getStatus() != null && order.getStatus() == ORDER_STATUS_PAID) {
+            teamUpdate.gt(GbTeam::getCompleteCount, 0)
+                    .setSql("complete_count = complete_count - 1");
+        }
+        ctx.getTeamMapper().update(null, teamUpdate);
     }
 
     /** 订单置为已退款。 */

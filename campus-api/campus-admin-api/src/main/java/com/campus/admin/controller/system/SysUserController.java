@@ -45,7 +45,6 @@ public class SysUserController {
      */
     @GetMapping("/page")
     @SaCheckPermission("sys:user:list")
-    @EncryptResponse
     public Result<PageResult<SysUser>> page(
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer pageSize,

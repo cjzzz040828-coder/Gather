@@ -1,5 +1,6 @@
 package com.campus.biz.groupbuy.filter.impl;
 
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.campus.biz.groupbuy.entity.GbOrder;
 import com.campus.biz.groupbuy.entity.GbTeam;
 import com.campus.biz.groupbuy.filter.SettlementContext;
@@ -36,9 +37,12 @@ public class TeamProgressFilter implements SettlementFilter {
         orderMapper.updateById(order);
 
         GbTeam team = context.getTeam();
+        // 精确自增 complete_count，避免整行覆盖
+        teamMapper.update(null, new LambdaUpdateWrapper<GbTeam>()
+                .eq(GbTeam::getId, team.getId())
+                .setSql("complete_count = complete_count + 1"));
         int complete = (team.getCompleteCount() == null ? 0 : team.getCompleteCount()) + 1;
         team.setCompleteCount(complete);
-        teamMapper.updateById(team);
 
         context.setTeamCompleted(complete >= team.getTargetCount());
     }

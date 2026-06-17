@@ -35,8 +35,11 @@ public class SettlementEndFilter implements SettlementFilter {
             return;
         }
         GbTeam team = context.getTeam();
+        // 精确只更新 status，避免 updateById 用旧 team 对象整行覆盖其它字段（曾导致成团团被旧状态覆盖）
+        teamMapper.update(null, new LambdaUpdateWrapper<GbTeam>()
+                .eq(GbTeam::getId, team.getId())
+                .set(GbTeam::getStatus, TEAM_STATUS_SUCCESS));
         team.setStatus(TEAM_STATUS_SUCCESS);
-        teamMapper.updateById(team);
 
         // 团内全部已支付订单 → 成团
         orderMapper.update(null, new LambdaUpdateWrapper<GbOrder>()
