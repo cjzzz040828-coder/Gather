@@ -181,7 +181,8 @@ function onPageChange(p: number) {
 }
 
 function goDetail(id: number) {
-  router.push(`/goods/${id}`)
+  const { href } = router.resolve(`/goods/${id}`)
+  window.open(href, '_blank')
 }
 
 watch(
