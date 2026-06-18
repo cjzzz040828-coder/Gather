@@ -397,7 +397,6 @@ onMounted(() => {
   line-height: 1.5;
   color: var(--ink);
   letter-spacing: 0.5px;
-  height: 42px;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -407,7 +406,7 @@ onMounted(() => {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin-top: 10px;
+  margin-top: 6px;
 }
 .price {
   color: var(--ink);
