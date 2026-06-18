@@ -249,6 +249,9 @@ a {
 .el-dialog.login-dialog .el-input__icon {
   color: rgba(255, 255, 255, 0.8);
 }
+.el-dialog.login-dialog .el-form-item__error {
+  color: #ffd0d0;
+}
 
 /* 用户下拉菜单：透明毛玻璃 + 白字，hover 整行变白实底红字（同 .cta-btn 风格） */
 .user-dropdown.el-popper {
