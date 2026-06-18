@@ -103,10 +103,10 @@ function onCommand(command: string) {
 }
 
 function onLoginSuccess() {
-  // 优先回到登录前想去的页面，其次受保护页跳转目标，否则停留首页
-  const redirect = (route.query.redirect as string) || pendingPath.value
+  // 优先回到登录前想去的页面，其次受保护页跳转目标，否则默认进入拼团商城
+  const redirect = (route.query.redirect as string) || pendingPath.value || '/goods'
   pendingPath.value = ''
-  if (redirect) router.push(redirect)
+  router.push(redirect)
 }
 </script>
 
