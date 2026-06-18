@@ -43,8 +43,7 @@
           <n-input v-model:value="form.activity.activityName" placeholder="请输入活动名称" />
         </n-form-item>
         <n-form-item label="商品">
-          <n-select v-model:value="form.activity.goodsId" :options="goodsOptions" placeholder="选择商品" style="width: 240px" @update:value="onGoodsChange" />
-          <n-select v-model:value="form.activity.skuId" :options="skuOptions" placeholder="选择 SKU" style="width: 240px; margin-left: 8px" />
+          <n-select v-model:value="form.activity.goodsId" :options="goodsOptions" placeholder="选择商品" style="width: 240px" />
         </n-form-item>
         <n-form-item label="成团人数">
           <n-input-number v-model:value="form.activity.targetCount" :min="2" style="width: 160px" />
@@ -88,7 +87,7 @@
 import { ref, reactive, h, computed, onMounted } from 'vue'
 import { NButton, NSpace, NIcon, NTag, useMessage, useDialog, type DataTableColumns } from 'naive-ui'
 import { SearchOutline, RefreshOutline, AddOutline, CreateOutline, TrashOutline } from '@vicons/ionicons5'
-import { gbActivityApi, gbGoodsApi, type GbActivity, type GbDiscount, type GbSku } from '@/api/groupbuy'
+import { gbActivityApi, gbGoodsApi, type GbActivity, type GbDiscount } from '@/api/groupbuy'
 
 const message = useMessage()
 const dialog = useDialog()
@@ -120,8 +119,6 @@ const saving = ref(false)
 const form = reactive<{ activity: GbActivity; discounts: GbDiscount[] }>({ activity: {}, discounts: [] })
 
 const goodsOptions = ref<{ label: string; value: number }[]>([])
-const skuCache = reactive<Record<number, GbSku[]>>({})
-const skuOptions = ref<{ label: string; value: number }[]>([])
 
 // 时间区间双向桥接（毫秒时间戳 <-> ISO 字符串）
 const validRange = computed<[number, number] | null>({
@@ -196,15 +193,6 @@ async function loadGoodsOptions() {
   goodsOptions.value = res.list.map(g => ({ label: `#${g.id} ${g.title}`, value: g.id! }))
 }
 
-async function onGoodsChange(goodsId: number) {
-  form.activity.skuId = undefined
-  if (!skuCache[goodsId]) {
-    const res = await gbGoodsApi.detail(goodsId)
-    skuCache[goodsId] = res.skus
-  }
-  skuOptions.value = skuCache[goodsId].map(s => ({ label: `${s.skuName} (¥${s.originalPrice})`, value: s.id! }))
-}
-
 function handleSearch() { pagination.page = 1; loadData() }
 function handleReset() { searchForm.status = null; handleSearch() }
 function handlePageChange(p: number) { pagination.page = p; loadData() }
@@ -216,7 +204,6 @@ function removeDiscount(idx: number) { form.discounts.splice(idx, 1) }
 async function openCreate() {
   form.activity = { targetCount: 2, timeLimitMinutes: 1440, status: 0 }
   form.discounts = []
-  skuOptions.value = []
   editVisible.value = true
 }
 
@@ -224,16 +211,12 @@ async function openEdit(row: GbActivity) {
   const res = await gbActivityApi.detail(row.id!)
   form.activity = { ...res.activity }
   form.discounts = res.discounts.map(d => ({ ...d }))
-  if (form.activity.goodsId) {
-    await onGoodsChange(form.activity.goodsId)
-    form.activity.skuId = res.activity.skuId
-  }
   editVisible.value = true
 }
 
 async function handleSave() {
   if (!form.activity.activityName) { message.warning('请填写活动名称'); return }
-  if (!form.activity.goodsId || !form.activity.skuId) { message.warning('请选择商品与 SKU'); return }
+  if (!form.activity.goodsId) { message.warning('请选择商品'); return }
   if (!form.activity.validStart || !form.activity.validEnd) { message.warning('请选择活动时间区间'); return }
   saving.value = true
   try {

@@ -51,10 +51,7 @@ public class MarketLoadNode implements TrialNode {
             throw new BusinessException("活动已结束");
         }
 
-        GbSku sku = skuMapper.selectById(activity.getSkuId());
-        if (sku == null) {
-            throw new BusinessException("SKU 不存在");
-        }
+        GbSku sku = resolveSku(context.getSkuId(), activity);
 
         List<GbDiscount> discounts = discountMapper.selectList(new LambdaQueryWrapper<GbDiscount>()
                 .eq(GbDiscount::getActivityId, activity.getId())
@@ -64,5 +61,27 @@ public class MarketLoadNode implements TrialNode {
         context.setSku(sku);
         context.setDiscounts(discounts);
         context.setOriginalPrice(sku.getOriginalPrice());
+    }
+
+    /**
+     * 解析下单/试算 SKU：入参 skuId 优先，为空回落活动默认 SKU；
+     * 校验该 SKU 属于活动商品且为启用状态，防止跨商品或停用 SKU。
+     */
+    private GbSku resolveSku(Long inputSkuId, GbActivity activity) {
+        Long skuId = inputSkuId != null ? inputSkuId : activity.getSkuId();
+        if (skuId == null) {
+            throw new BusinessException("请选择商品规格");
+        }
+        GbSku sku = skuMapper.selectById(skuId);
+        if (sku == null) {
+            throw new BusinessException("SKU 不存在");
+        }
+        if (!activity.getGoodsId().equals(sku.getGoodsId())) {
+            throw new BusinessException("所选规格不属于该商品");
+        }
+        if (sku.getStatus() != null && sku.getStatus() != 1) {
+            throw new BusinessException("该规格已下架");
+        }
+        return sku;
     }
 }

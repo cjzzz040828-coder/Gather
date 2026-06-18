@@ -64,6 +64,7 @@ export interface GbOrder {
   teamId: number
   activityId: number
   skuId: number
+  quantity: number
   userId: number
   outTradeNo: string
   originalAmount: number
@@ -90,9 +91,13 @@ export interface ActivityDetailVO {
 export interface TrialResult {
   activityId: number
   skuId: number
+  quantity: number
   originalPrice: number
   deductionAmount: number
   payPrice: number
+  totalOriginalPrice: number
+  totalDeductionAmount: number
+  totalPayPrice: number
   targetCount: number
 }
 
@@ -133,10 +138,10 @@ export const groupbuyApi = {
   },
 
   // 需登录
-  trial(activityId: number): Promise<TrialResult> {
-    return request({ url: '/web/groupbuy/trial', method: 'get', params: { activityId } })
+  trial(activityId: number, skuId?: number, quantity = 1): Promise<TrialResult> {
+    return request({ url: '/web/groupbuy/trial', method: 'get', params: { activityId, skuId, quantity } })
   },
-  lock(data: { activityId: number; teamId?: number; addressId: number }): Promise<LockOrderResult> {
+  lock(data: { activityId: number; skuId?: number; quantity?: number; teamId?: number; addressId: number }): Promise<LockOrderResult> {
     return request({ url: '/web/groupbuy/lock', method: 'post', data })
   },
   payCallback(outTradeNo: string): Promise<void> {

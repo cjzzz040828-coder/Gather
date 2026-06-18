@@ -57,8 +57,8 @@ public class GbActivityServiceImpl extends ServiceImpl<GbActivityMapper, GbActiv
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long saveActivity(GbActivity activity, List<GbDiscount> discounts) {
-        if (activity.getGoodsId() == null || activity.getSkuId() == null) {
-            throw new BusinessException("必须选择商品与 SKU");
+        if (activity.getGoodsId() == null) {
+            throw new BusinessException("必须选择商品");
         }
         if (activity.getTargetCount() == null || activity.getTargetCount() < 2) {
             throw new BusinessException("成团人数至少为 2");

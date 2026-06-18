@@ -61,12 +61,13 @@ public enum RefundStrategy {
         };
     }
 
-    /** 归还该订单占用的 1 件库存，并把团锁单数 -1；已付单同时把已支付人数 -1（与支付时 complete_count++ 对称）。 */
+    /** 归还该订单占用的库存（按购买数量），并把团锁单数 -1；已付单同时把已支付人数 -1（与支付时 complete_count++ 对称）。 */
     protected static void restoreStockAndTeam(RefundContext ctx) {
         GbOrder order = ctx.getOrder();
+        int quantity = order.getQuantity() == null ? 1 : order.getQuantity();
         ctx.getSkuMapper().update(null, new LambdaUpdateWrapper<GbSku>()
                 .eq(GbSku::getId, order.getSkuId())
-                .setSql("stock = stock + 1"));
+                .setSql("stock = stock + " + quantity));
 
         LambdaUpdateWrapper<GbTeam> teamUpdate = new LambdaUpdateWrapper<GbTeam>()
                 .eq(GbTeam::getId, order.getTeamId())

@@ -78,9 +78,9 @@ public class GbTradeServiceImpl implements GbTradeService {
     private static final long LOCK_LEASE_SEC = 10;
 
     @Override
-    public TrialResultDTO trial(Long activityId, Long userId) {
+    public TrialResultDTO trial(Long activityId, Long skuId, Integer quantity, Long userId) {
         // 试算走规则树责任链：参数校验→动态开关→营销配置加载→人群标签过滤→优惠计算→异常兜底
-        TrialContext context = trialChain.execute(activityId, userId);
+        TrialContext context = trialChain.execute(activityId, skuId, quantity, userId);
         return context.getResult();
     }
 
@@ -89,11 +89,29 @@ public class GbTradeServiceImpl implements GbTradeService {
     public LockOrderResultDTO lockOrder(LockOrderDTO dto, Long userId) {
         GbActivity activity = getRunningActivity(dto.getActivityId());
         accessGuard.checkAccess(activity, userId);
-        GbSku sku = skuMapper.selectById(activity.getSkuId());
+
+        // 解析购买数量（为空按 1 件）
+        int quantity = dto.getQuantity() == null ? 1 : dto.getQuantity();
+        if (quantity < 1) {
+            throw new BusinessException("购买数量至少为 1");
+        }
+
+        // 解析下单 SKU：入参 skuId 优先，为空回落活动默认 SKU；校验归属商品 + 启用
+        Long skuId = dto.getSkuId() != null ? dto.getSkuId() : activity.getSkuId();
+        if (skuId == null) {
+            throw new BusinessException("请选择商品规格");
+        }
+        GbSku sku = skuMapper.selectById(skuId);
         if (sku == null) {
             throw new BusinessException("SKU 不存在");
         }
-        if (sku.getStock() == null || sku.getStock() <= 0) {
+        if (!activity.getGoodsId().equals(sku.getGoodsId())) {
+            throw new BusinessException("所选规格不属于该商品");
+        }
+        if (sku.getStatus() != null && sku.getStatus() != 1) {
+            throw new BusinessException("该规格已下架");
+        }
+        if (sku.getStock() == null || sku.getStock() < quantity) {
             throw new BusinessException("库存不足");
         }
 
@@ -106,9 +124,12 @@ public class GbTradeServiceImpl implements GbTradeService {
             throw new BusinessException("收货地址不存在");
         }
 
-        // 试算实付价
-        BigDecimal originalPrice = sku.getOriginalPrice();
-        BigDecimal payPrice = applyBestDiscount(dto.getActivityId(), originalPrice, accessGuard.userCrowdTag(userId));
+        // 试算实付价（单件）后按数量合计
+        BigDecimal unitOriginal = sku.getOriginalPrice();
+        BigDecimal unitPay = applyBestDiscount(dto.getActivityId(), unitOriginal, accessGuard.userCrowdTag(userId));
+        BigDecimal qty = BigDecimal.valueOf(quantity);
+        BigDecimal originalTotal = unitOriginal.multiply(qty);
+        BigDecimal payTotal = unitPay.multiply(qty);
 
         // 建团 or 加团
         GbTeam team = resolveTeam(dto, activity, userId);
@@ -129,7 +150,7 @@ public class GbTradeServiceImpl implements GbTradeService {
             // Redis 原子递增 + SetNx 兜底占位抢名额（前置闸门）
             seatService.acquire(team.getId(), userId, activity.getTargetCount());
             try {
-                return doLockOrder(dto, activity, sku, team, userId, originalPrice, payPrice, address);
+                return doLockOrder(dto, activity, sku, team, userId, quantity, originalTotal, payTotal, address);
             } catch (RuntimeException e) {
                 // 下单失败，释放已抢占的 Redis 名额（DB 由事务回滚）
                 seatService.release(team.getId(), userId);
@@ -146,8 +167,8 @@ public class GbTradeServiceImpl implements GbTradeService {
      * 锁内下单：防重校验 → 写锁定单 → 扣库存 → 团锁单数+1 → 调支付下单。
      */
     private LockOrderResultDTO doLockOrder(LockOrderDTO dto, GbActivity activity, GbSku sku,
-                                           GbTeam team, Long userId,
-                                           BigDecimal originalPrice, BigDecimal payPrice,
+                                           GbTeam team, Long userId, int quantity,
+                                           BigDecimal originalTotal, BigDecimal payTotal,
                                            UserAddress address) {
         // 防止同一用户在同一团内重复锁单
         Long dup = orderMapper.selectCount(new LambdaQueryWrapper<GbOrder>()
@@ -163,11 +184,12 @@ public class GbTradeServiceImpl implements GbTradeService {
         order.setTeamId(team.getId());
         order.setActivityId(activity.getId());
         order.setSkuId(sku.getId());
+        order.setQuantity(quantity);
         order.setUserId(userId);
         order.setOutTradeNo(outTradeNo);
-        order.setOriginalAmount(originalPrice);
-        order.setPayAmount(payPrice);
-        order.setDeductionAmount(originalPrice.subtract(payPrice));
+        order.setOriginalAmount(originalTotal);
+        order.setPayAmount(payTotal);
+        order.setDeductionAmount(originalTotal.subtract(payTotal));
         order.setStatus(ORDER_STATUS_LOCKED);
         // 收货地址快照（固化下单时的地址，后续地址修改不影响本单）
         order.setReceiver(address.getReceiver());
@@ -179,11 +201,11 @@ public class GbTradeServiceImpl implements GbTradeService {
             throw new BusinessException("交易单号重复，请重试");
         }
 
-        // 锁库存 + 团锁单数 +1（MySQL 最终一致兜底）
+        // 锁库存（扣 quantity 件） + 团锁单数 +1（MySQL 最终一致兜底）
         int updated = skuMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<GbSku>()
                 .eq(GbSku::getId, sku.getId())
-                .gt(GbSku::getStock, 0)
-                .setSql("stock = stock - 1"));
+                .ge(GbSku::getStock, quantity)
+                .setSql("stock = stock - " + quantity));
         if (updated == 0) {
             throw new BusinessException("库存不足");
         }
@@ -192,7 +214,7 @@ public class GbTradeServiceImpl implements GbTradeService {
 
         // 调支付下单（模拟通道）
         Map<String, String> payParams = payServiceFactory.createPayOrder(
-                outTradeNo, payPrice, activity.getActivityName());
+                outTradeNo, payTotal, activity.getActivityName());
 
         LockOrderResultDTO result = new LockOrderResultDTO();
         result.setOrderId(order.getId());

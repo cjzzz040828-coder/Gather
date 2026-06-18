@@ -101,8 +101,10 @@ public class WebGroupBuyController {
      * 试算（需登录）
      */
     @GetMapping("/trial")
-    public Result<TrialResultDTO> trial(@RequestParam Long activityId) {
-        return Result.ok(gbTradeService.trial(activityId, StpUtil.getLoginIdAsLong()));
+    public Result<TrialResultDTO> trial(@RequestParam Long activityId,
+                                        @RequestParam(required = false) Long skuId,
+                                        @RequestParam(defaultValue = "1") Integer quantity) {
+        return Result.ok(gbTradeService.trial(activityId, skuId, quantity, StpUtil.getLoginIdAsLong()));
     }
 
     /**

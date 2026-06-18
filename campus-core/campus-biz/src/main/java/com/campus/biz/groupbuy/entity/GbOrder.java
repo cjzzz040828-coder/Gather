@@ -25,6 +25,9 @@ public class GbOrder extends BaseEntity {
     /** SKU ID */
     private Long skuId;
 
+    /** 购买数量 */
+    private Integer quantity;
+
     /** 拼单用户ID */
     private Long userId;
 

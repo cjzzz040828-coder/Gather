@@ -20,6 +20,8 @@ public class TrialContext {
 
     // ===== 入参 =====
     private Long activityId;
+    private Long skuId;
+    private Integer quantity;
     private Long userId;
 
     // ===== 营销配置加载节点填充 =====

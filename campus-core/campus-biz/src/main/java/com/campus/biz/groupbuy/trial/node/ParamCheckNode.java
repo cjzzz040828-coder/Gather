@@ -24,5 +24,11 @@ public class ParamCheckNode implements TrialNode {
         if (context.getUserId() == null) {
             throw new BusinessException("用户未登录");
         }
+        Integer quantity = context.getQuantity();
+        if (quantity == null) {
+            context.setQuantity(1);
+        } else if (quantity < 1) {
+            throw new BusinessException("购买数量至少为 1");
+        }
     }
 }

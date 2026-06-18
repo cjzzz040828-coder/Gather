@@ -27,9 +27,9 @@
         </div>
         <div class="act-hero-right">
           <div class="trial-amount" v-if="trial">
-            <span class="ta-label">我的拼团价</span>
-            <span class="price big"><span class="symbol">¥</span>{{ trial.payPrice }}</span>
-            <span class="ta-cut">已省 ¥{{ trial.deductionAmount }}</span>
+            <span class="ta-label">我的拼团价（{{ trial.quantity }} 件）</span>
+            <span class="price big"><span class="symbol">¥</span>{{ trial.totalPayPrice }}</span>
+            <span class="ta-cut">已省 ¥{{ trial.totalDeductionAmount }}</span>
           </div>
           <div class="trial-amount placeholder" v-else>
             <span class="ta-label">点击试算查看你的专属价</span>
@@ -164,9 +164,10 @@
       <div class="pay-body">
         <div class="pay-row"><span>订单号</span><b>{{ lockResult?.outTradeNo }}</b></div>
         <div class="pay-row"><span>组队 ID</span><b>#{{ lockResult?.teamId }}</b></div>
+        <div class="pay-row"><span>数量</span><b>{{ trial?.quantity ?? buyQty }} 件</b></div>
         <div class="pay-amount">
           <span>应付金额</span>
-          <span class="price big"><span class="symbol">¥</span>{{ trial?.payPrice ?? '-' }}</span>
+          <span class="price big"><span class="symbol">¥</span>{{ trial?.totalPayPrice ?? '-' }}</span>
         </div>
         <el-alert type="warning" :closable="false" title="演示环境：点击确认即模拟支付成功" />
       </div>
@@ -232,6 +233,10 @@ async function loadAddresses() {
 }
 
 const activityId = () => Number(route.params.id)
+
+// 从商品详情页带来的规格与数量（缺省 1 件、规格回落后端默认）
+const selectedSkuId = route.query.skuId ? Number(route.query.skuId) : undefined
+const buyQty = route.query.qty ? Math.max(1, Number(route.query.qty)) : 1
 
 // 倒计时：每秒 tick 触发重算，团/订单按各自 validEndTime 计算剩余
 const now = ref(Date.now())
@@ -327,7 +332,7 @@ function requireLogin(): boolean {
 
 async function doTrial() {
   if (!requireLogin()) return
-  trial.value = await groupbuyApi.trial(activityId())
+  trial.value = await groupbuyApi.trial(activityId(), selectedSkuId, buyQty)
 }
 
 async function lock(teamId?: number) {
@@ -359,9 +364,11 @@ async function confirmLock() {
   }
   locking.value = true
   try {
-    if (!trial.value) trial.value = await groupbuyApi.trial(activityId())
+    if (!trial.value) trial.value = await groupbuyApi.trial(activityId(), selectedSkuId, buyQty)
     lockResult.value = await groupbuyApi.lock({
       activityId: activityId(),
+      skuId: selectedSkuId,
+      quantity: buyQty,
       teamId: pendingTeamId.value ?? undefined,
       addressId: selectedAddressId.value
     })

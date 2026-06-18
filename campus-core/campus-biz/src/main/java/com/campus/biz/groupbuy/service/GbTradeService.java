@@ -10,9 +10,10 @@ import com.campus.biz.groupbuy.dto.TrialResultDTO;
 public interface GbTradeService {
 
     /**
-     * 试算：按活动折扣策略算出优惠后实付价（含人群标签命中）
+     * 试算：按活动折扣策略算出优惠后实付价（含人群标签命中）。
+     * @param skuId 指定 SKU（为空回落活动默认 SKU）；quantity 购买数量（为空按 1 件）
      */
-    TrialResultDTO trial(Long activityId, Long userId);
+    TrialResultDTO trial(Long activityId, Long skuId, Integer quantity, Long userId);
 
     /**
      * 锁单：校验活动/库存 → 建团或加入团 → 写拼单记录(锁定) → 调支付下单

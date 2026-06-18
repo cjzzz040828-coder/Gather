@@ -38,12 +38,20 @@ public class FallbackNode implements TrialNode {
             context.setPayPrice(payPrice);
         }
 
+        int qty = context.getQuantity() == null ? 1 : context.getQuantity();
+        BigDecimal quantity = BigDecimal.valueOf(qty);
+        BigDecimal deduction = originalPrice.subtract(payPrice);
+
         TrialResultDTO result = new TrialResultDTO();
         result.setActivityId(context.getActivityId());
         result.setSkuId(context.getSku().getId());
+        result.setQuantity(qty);
         result.setOriginalPrice(originalPrice);
         result.setPayPrice(payPrice);
-        result.setDeductionAmount(originalPrice.subtract(payPrice));
+        result.setDeductionAmount(deduction);
+        result.setTotalOriginalPrice(originalPrice.multiply(quantity));
+        result.setTotalPayPrice(payPrice.multiply(quantity));
+        result.setTotalDeductionAmount(deduction.multiply(quantity));
         result.setTargetCount(context.getActivity().getTargetCount());
         context.setResult(result);
     }

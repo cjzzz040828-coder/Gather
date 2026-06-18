@@ -28,6 +28,7 @@
         <div class="od-goods-info">
           <div class="od-goods-title">{{ data.goods.title }}</div>
           <div class="od-activity" v-if="data.activity">{{ data.activity.activityName }}</div>
+          <div class="od-qty">数量 ×{{ data.order.quantity ?? 1 }}</div>
           <div class="od-cat" v-if="data.goods.category">{{ data.goods.category }}</div>
         </div>
       </div>
@@ -35,6 +36,7 @@
       <!-- 金额明细 -->
       <div class="od-block jd-card">
         <h4 class="od-h4">金额明细</h4>
+        <div class="od-row"><span>数量</span><b>×{{ data.order.quantity ?? 1 }}</b></div>
         <div class="od-row"><span>原价</span><b>¥{{ data.order.originalAmount }}</b></div>
         <div class="od-row"><span>优惠</span><b class="cut">-¥{{ data.order.deductionAmount }}</b></div>
         <div class="od-row total"><span>实付</span><b class="pay">¥{{ data.order.payAmount }}</b></div>
@@ -177,6 +179,11 @@ onMounted(load)
   margin-bottom: 8px;
 }
 .od-activity {
+  color: var(--c-text-2);
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+.od-qty {
   color: var(--c-text-2);
   font-size: 13px;
   margin-bottom: 6px;

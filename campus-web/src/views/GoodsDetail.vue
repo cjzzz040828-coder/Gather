@@ -103,7 +103,7 @@
           <!-- 数量 -->
           <div class="qty-block">
             <div class="qty-label">数量</div>
-            <el-input-number v-model="qty" :min="1" :max="99" />
+            <el-input-number v-model="qty" :min="1" :max="maxQty" />
           </div>
 
           <!-- 去拼团 -->
@@ -169,6 +169,9 @@ const totalStock = computed(
   () => data.value?.skus.reduce((sum, s) => sum + (s.stock || 0), 0) ?? 0
 )
 
+// 数量上限：选中 SKU 的库存（无则回退总库存或 1）
+const maxQty = computed(() => selectedSku.value?.stock ?? totalStock.value ?? 1)
+
 const minPrice = computed(() => {
   if (!data.value?.skus?.length) return '-'
   return Math.min(...data.value.skus.map((s) => Number(s.originalPrice)))
@@ -205,9 +208,16 @@ watch(
   { immediate: true }
 )
 
+// 切换规格后数量不得超过该规格库存
+watch(maxQty, (max) => {
+  if (qty.value > max) qty.value = max < 1 ? 1 : max
+})
+
 function goActivity() {
   if (!primaryActivity.value) return
-  router.push(`/activity/${primaryActivity.value.id}`)
+  const query: Record<string, string> = { qty: String(qty.value) }
+  if (selectedSkuId.value) query.skuId = String(selectedSkuId.value)
+  router.push({ path: `/activity/${primaryActivity.value.id}`, query })
 }
 
 onMounted(load)

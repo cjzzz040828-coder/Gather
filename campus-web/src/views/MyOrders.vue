@@ -17,6 +17,7 @@
       <div v-for="o in orders" :key="o.id" class="order-row">
         <div class="col-info">
           <div class="oc-no">订单号 {{ o.outTradeNo }}</div>
+          <div class="oc-qty">数量 ×{{ o.quantity ?? 1 }}</div>
           <div class="oc-time">
             {{ o.payTime ? o.payTime.replace('T', ' ').slice(0, 16) : '未支付' }}
           </div>
@@ -221,6 +222,11 @@ onUnmounted(() => {
 
 .oc-no {
   font-weight: 600;
+  margin-bottom: 4px;
+}
+.oc-qty {
+  color: var(--c-text-2);
+  font-size: var(--fz-xs);
   margin-bottom: 4px;
 }
 .oc-time {

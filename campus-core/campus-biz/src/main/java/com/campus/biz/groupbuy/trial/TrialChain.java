@@ -33,9 +33,11 @@ public class TrialChain {
     /**
      * 执行试算规则树，返回携带结果的上下文
      */
-    public TrialContext execute(Long activityId, Long userId) {
+    public TrialContext execute(Long activityId, Long skuId, Integer quantity, Long userId) {
         TrialContext context = new TrialContext();
         context.setActivityId(activityId);
+        context.setSkuId(skuId);
+        context.setQuantity(quantity);
         context.setUserId(userId);
         try {
             for (TrialNode node : orderedNodes) {
