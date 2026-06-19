@@ -42,9 +42,11 @@
 | Vite | 5.0.11 | 构建工具 |
 | TypeScript | 5.3.3 | 类型安全 |
 | Naive UI | 2.37.3 | 后台 UI 组件库 |
+| Element Plus | 2.7.0 | PC 拼团端 UI 组件库 |
 | Pinia | 2.1.7 | 状态管理 |
 | Vue Router | 4.2.5 | 路由管理 |
 | Axios | 1.6.5 | HTTP 客户端 |
+| wangEditor | 5.1 | 商品图文详情富文本编辑器 |
 | ECharts | 6.0.0 | 图表库 |
 
 ### 移动端（小程序）
@@ -93,9 +95,14 @@
 ├── campus-uniapp              # 移动端小程序（UniApp）
 │
 └── sql                        # 数据库脚本
-    ├── campus-system.sql      # 系统基础库
-    ├── groupbuy.sql           # 拼团交易模块表结构
-    └── seed_groupbuy_testdata.sql  # 拼团测试数据
+    ├── campus-system.sql       # 系统基础库（RBAC、菜单、字典等）
+    ├── groupbuy.sql            # 拼团交易模块表结构 + 后台菜单
+    ├── seed_groupbuy_testdata.sql      # 拼团测试商品数据
+    ├── address_and_order_snapshot.sql  # 收货地址表 + 订单地址快照字段
+    ├── order_refund_reason.sql         # 订单退款原因字段
+    ├── order_quantity_and_multisku.sql # 订单购买数量 + 活动多 SKU 改造
+    ├── goods_enhance_fields.sql        # 商品扩展字段（副标题/划线价/销量/排序/上架时间）+ SKU 图
+    └── seed_goods_skus_images.sql      # 商品多 SKU 与轮播图填充
 ```
 
 ## 功能特性
@@ -113,10 +120,26 @@
 ### 消息中心
 - 系统公告、即时通讯（WebSocket）、私聊、群聊
 
-### 拼团交易
-- 拼团活动配置、成团/未成团流程、状态机驱动
-- 成团/失败通知（RabbitMQ 可选，关闭时回落本地消息表）
-- 超时未成团扫描、通知补偿扫描
+### 拼团交易（自研，借鉴 group-buy-market 的 DDD 设计）
+- **完整交易链路**：活动配置 → 价格试算 → 锁单 → 模拟支付 → 进度结算 → 成团/失败 → 退单
+- **多 SKU + 购买数量**：一活动多规格、一人可买多件，试算/库存/退款均按数量与所选 SKU 计算
+- **收货地址**：下单选址 + 订单地址快照，订单详情、主动取消/退款
+- **规则树试算**：参数校验 → 动态开关 → 营销加载 → 人群标签 → 优惠计算 → 异常兜底（责任链）
+- **折扣策略**：直减 / 折扣 / N 元购（策略工厂）；成团/退单（枚举策略 + 结算责任链）
+- **高并发控制**：Redisson 分布式锁串行化抢名额、Redis 原子名额抢占 + MySQL 库存兜底
+- **运营能力**：Redis BitMap 人群标签、@DCCValue 运行期动态配置（降级/灰度/黑名单）
+- **异步通知**：成团/失败事件 + 本地消息表，RabbitMQ 可选（关闭时回落本地消费）+ 补偿扫描 + HTTP 回调
+- **超时收尾**：定时扫描超时未成团的团，自动退款并置失败
+
+### 商品管理（后台）
+- 商品 / SKU 维护，封面与 SKU 图上传、多图轮播、wangEditor 富文本详情
+- 商品字段：副标题、划线价、销量、排序权重、上架时间
+- 列表：价格区间 / 库存预警筛选、批量上下架、导出 CSV、预览 C 端、一键创建关联活动
+
+### PC 拼团商城（campus-web，Element Plus）
+- 未登录可自由浏览首页、商品列表、商品详情与活动详情
+- 仅在交易动作（去拼团 / 下单 / 我的拼单 / 收货地址 / 个人中心）时就地弹出全局登录框，成功后继续原操作
+- 京东风商品详情、规格选择、数量选择、拼团进度、分享邀请、我的拼单与订单详情
 
 ### 文件管理
 - 文件上传（本地/MinIO/阿里云OSS）、文件列表与预览
@@ -148,8 +171,17 @@ CREATE DATABASE `campus-system` DEFAULT CHARACTER SET utf8mb4;
 ```
 
 ```bash
+# 基础库 + 拼团模块
 mysql -u root -p campus-system < sql/campus-system.sql
 mysql -u root -p campus-system < sql/groupbuy.sql
+# 增量改造脚本（按顺序执行）
+mysql -u root -p campus-system < sql/address_and_order_snapshot.sql
+mysql -u root -p campus-system < sql/order_refund_reason.sql
+mysql -u root -p campus-system < sql/order_quantity_and_multisku.sql
+mysql -u root -p campus-system < sql/goods_enhance_fields.sql
+# 可选：填充示例商品 / 多 SKU 与轮播图
+mysql -u root -p campus-system < sql/seed_groupbuy_testdata.sql
+mysql -u root -p campus-system < sql/seed_goods_skus_images.sql
 ```
 
 2. 修改 `campus-starter/src/main/resources/application-dev.yml` 中的数据库和 Redis 配置。
