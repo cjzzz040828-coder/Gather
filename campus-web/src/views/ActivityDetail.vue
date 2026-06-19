@@ -202,10 +202,12 @@ import {
   type GbDiscount
 } from '@/api/groupbuy'
 import { useUserStore } from '@/stores/user'
+import { useAuthDialogStore } from '@/stores/authDialog'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const authDialog = useAuthDialogStore()
 
 const data = ref<ActivityDetailVO | null>(null)
 const trial = ref<TrialResult | null>(null)
@@ -321,22 +323,22 @@ async function load() {
   }
 }
 
-function requireLogin(): boolean {
+function requireLogin(retry: () => void): boolean {
   if (!userStore.isLogin) {
-    ElMessage.warning('请先登录')
-    router.push({ path: '/login', query: { redirect: route.fullPath } })
+    // 就地弹登录，成功后重试原动作，不离开当前页
+    authDialog.open({ onSuccess: retry })
     return false
   }
   return true
 }
 
 async function doTrial() {
-  if (!requireLogin()) return
+  if (!requireLogin(doTrial)) return
   trial.value = await groupbuyApi.trial(activityId(), selectedSkuId, buyQty)
 }
 
 async function lock(teamId?: number) {
-  if (!requireLogin()) return
+  if (!requireLogin(() => lock(teamId))) return
   // 先选收货地址再锁单
   pendingTeamId.value = teamId ?? null
   await loadAddresses()

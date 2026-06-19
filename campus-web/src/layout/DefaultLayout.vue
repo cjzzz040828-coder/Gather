@@ -7,7 +7,7 @@
         <span class="topbar-right">
           <template v-if="userStore.isLogin">你好，{{ userStore.nickname }}</template>
           <template v-else>
-            <a @click="router.push('/login')">请登录</a>
+            <a @click="authDialog.open()">请登录</a>
           </template>
         </span>
       </div>
@@ -57,7 +57,7 @@
               </el-dropdown-menu>
             </template>
           </el-dropdown>
-          <button v-else class="login-btn" @click="router.push('/login')">登录</button>
+          <button v-else class="login-btn" @click="authDialog.open()">登录</button>
         </div>
       </div>
     </header>
@@ -98,9 +98,11 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowDown, Search } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
+import { useAuthDialogStore } from '@/stores/authDialog'
 
 const router = useRouter()
 const userStore = useUserStore()
+const authDialog = useAuthDialogStore()
 const keyword = ref('')
 
 function doSearch() {

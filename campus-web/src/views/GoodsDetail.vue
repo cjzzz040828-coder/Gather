@@ -144,9 +144,11 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { groupbuyApi, type GoodsDetailVO, type GbActivity } from '@/api/groupbuy'
+import { useAuthDialogStore } from '@/stores/authDialog'
 
 const route = useRoute()
 const router = useRouter()
+const authDialog = useAuthDialogStore()
 const data = ref<GoodsDetailVO | null>(null)
 const loading = ref(false)
 const activities = ref<GbActivity[]>([])
@@ -217,9 +219,12 @@ watch(maxQty, (max) => {
 
 function goActivity() {
   if (!primaryActivity.value) return
-  const query: Record<string, string> = { qty: String(qty.value) }
-  if (selectedSkuId.value) query.skuId = String(selectedSkuId.value)
-  router.push({ path: `/activity/${primaryActivity.value.id}`, query })
+  // 未登录则就地弹登录，成功后再进入拼团活动页
+  authDialog.requireLogin(() => {
+    const query: Record<string, string> = { qty: String(qty.value) }
+    if (selectedSkuId.value) query.skuId = String(selectedSkuId.value)
+    router.push({ path: `/activity/${primaryActivity.value!.id}`, query })
+  })
 }
 
 onMounted(load)

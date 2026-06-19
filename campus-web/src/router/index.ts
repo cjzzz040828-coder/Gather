@@ -19,17 +19,20 @@ const routes: RouteRecordRaw[] = [
       {
         path: '/goods',
         name: 'GoodsList',
-        component: () => import('@/views/GoodsList.vue')
+        component: () => import('@/views/GoodsList.vue'),
+        meta: { public: true }
       },
       {
         path: '/goods/:id',
         name: 'GoodsDetail',
-        component: () => import('@/views/GoodsDetail.vue')
+        component: () => import('@/views/GoodsDetail.vue'),
+        meta: { public: true }
       },
       {
         path: '/activity/:id',
         name: 'ActivityDetail',
-        component: () => import('@/views/ActivityDetail.vue')
+        component: () => import('@/views/ActivityDetail.vue'),
+        meta: { public: true }
       },
       {
         path: '/my-orders',
@@ -64,7 +67,11 @@ router.beforeEach((to) => {
   const token = localStorage.getItem('campus-web-user')
   const hasToken = token && JSON.parse(token)?.token
   if (!to.meta.public && !hasToken) {
-    return { path: '/', query: { redirect: to.fullPath } }
+    // 需登录页未登录：不跳走，停在当前页并就地弹登录，成功后再去目标
+    import('@/stores/authDialog').then(({ useAuthDialogStore }) => {
+      useAuthDialogStore().open({ redirect: to.fullPath })
+    })
+    return false
   }
   return true
 })

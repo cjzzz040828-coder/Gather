@@ -4,7 +4,7 @@
     width="400px"
     :show-close="true"
     align-center
-    class="login-dialog"
+    :class="['login-dialog', { 'on-landing': isLanding }]"
     modal-class="login-overlay"
     @update:model-value="(v: boolean) => emit('update:modelValue', v)"
     @open="loadCaptcha"
@@ -53,7 +53,8 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { User, Lock, Key } from '@element-plus/icons-vue'
 import { authApi } from '@/api/auth'
@@ -64,6 +65,10 @@ const emit = defineEmits<{
   'update:modelValue': [v: boolean]
   success: []
 }>()
+
+const route = useRoute()
+// 仅官网落地页(/)弹框靠右避开左侧文案；商城内页弹框居中
+const isLanding = computed(() => route.path === '/')
 
 const userStore = useUserStore()
 const formRef = ref<FormInstance>()

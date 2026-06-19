@@ -213,14 +213,17 @@ a {
 .el-dialog.login-dialog {
   border-radius: 20px;
   padding: 12px 32px 28px;
-  /* align-center 负责视口垂直居中；此处仅整体右移避开左侧文案 */
-  margin-right: 8vw !important;
+  /* 默认水平居中（align-center 负责垂直居中）；商城内页弹框用此默认 */
   /* 毛玻璃效果 */
   background: rgba(255, 255, 255, 0.18) !important;
   backdrop-filter: blur(22px) saturate(160%);
   -webkit-backdrop-filter: blur(22px) saturate(160%);
   border: 1px solid rgba(255, 255, 255, 0.4);
   box-shadow: 0 12px 48px rgba(0, 0, 0, 0.35);
+}
+/* 官网落地页:弹框整体右移，避开左侧主视觉文案 */
+.el-dialog.login-dialog.on-landing {
+  margin-right: 8vw !important;
 }
 .el-dialog.login-dialog .el-dialog__header {
   padding: 0;
@@ -250,7 +253,7 @@ a {
   color: rgba(255, 255, 255, 0.8);
 }
 .el-dialog.login-dialog .el-form-item__error {
-  color: #ffd0d0;
+  display: none;
 }
 
 /* 用户下拉菜单：透明毛玻璃 + 白字，hover 整行变白实底红字（同 .cta-btn 风格） */

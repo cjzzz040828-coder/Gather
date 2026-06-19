@@ -34,7 +34,7 @@
               </el-dropdown-menu>
             </template>
           </el-dropdown>
-          <button v-else class="login-btn" @click="dialogVisible = true">登 录</button>
+          <button v-else class="login-btn" @click="authDialog.open()">登 录</button>
         </div>
       </div>
     </header>
@@ -52,27 +52,25 @@
       <el-icon :size="28"><ArrowDownBold /></el-icon>
     </div>
 
-    <LoginDialog v-model="dialogVisible" @success="onLoginSuccess" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ArrowDownBold } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
-import LoginDialog from '@/components/LoginDialog.vue'
+import { useAuthDialogStore } from '@/stores/authDialog'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
-const dialogVisible = ref(false)
-const pendingPath = ref('')
+const authDialog = useAuthDialogStore()
 
-// 受保护页面未登录被拦截回首页时，自动弹出登录框
+// 受保护页面未登录被拦截回首页时（旧链接兼容），自动弹出全局登录框
 onMounted(() => {
   if (route.query.redirect && !userStore.isLogin) {
-    dialogVisible.value = true
+    authDialog.open({ redirect: route.query.redirect as string })
   }
 })
 
@@ -80,33 +78,19 @@ function scrollTop() {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
+// 逛商城无需登录，直接进入
 function goShop() {
-  if (userStore.isLogin) {
-    router.push('/goods')
-  } else {
-    pendingPath.value = '/goods'
-    dialogVisible.value = true
-  }
+  router.push('/goods')
 }
 
+// 我的拼单需登录：未登录就地弹登录，成功后进入
 function goOrders() {
-  if (userStore.isLogin) router.push('/my-orders')
-  else {
-    pendingPath.value = '/my-orders'
-    dialogVisible.value = true
-  }
+  authDialog.requireLogin(() => router.push('/my-orders'))
 }
 
 function onCommand(command: string) {
   if (command === 'orders') router.push('/my-orders')
   else if (command === 'logout') userStore.logout()
-}
-
-function onLoginSuccess() {
-  // 优先回到登录前想去的页面，其次受保护页跳转目标，否则默认进入拼团商城
-  const redirect = (route.query.redirect as string) || pendingPath.value || '/goods'
-  pendingPath.value = ''
-  router.push(redirect)
 }
 </script>
 
