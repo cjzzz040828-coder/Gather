@@ -39,7 +39,7 @@ public class WebGroupBuyController {
      */
     @GetMapping("/goods")
     public Result<List<GbGoods>> goodsList(@RequestParam(required = false) String title) {
-        return Result.ok(gbGoodsService.adminPage(1, 100, title, 1).getRecords());
+        return Result.ok(gbGoodsService.adminPage(1, 100, title, 1, null, null, null).getRecords());
     }
 
     /**

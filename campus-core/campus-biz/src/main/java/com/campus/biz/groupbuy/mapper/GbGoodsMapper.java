@@ -42,7 +42,7 @@ public interface GbGoodsMapper extends BaseMapper<GbGoods> {
             <choose>
                 <when test="sort == 'price_asc'">m.min_price ASC, g.id DESC</when>
                 <when test="sort == 'price_desc'">m.min_price DESC, g.id DESC</when>
-                <otherwise>g.id DESC</otherwise>
+                <otherwise>g.sort DESC, g.id DESC</otherwise>
             </choose>
             </script>
             """)
@@ -50,6 +50,50 @@ public interface GbGoodsMapper extends BaseMapper<GbGoods> {
                                  @Param("category") String category,
                                  @Param("title") String title,
                                  @Param("sort") String sort);
+
+    /**
+     * 后台商品分页：LEFT JOIN 取最低 SKU 价（minPrice），不限上架状态。
+     * 支持标题模糊、状态精确、价格区间（对 min_price）、库存预警（存在 stock<=阈值 的 SKU）。
+     * 按 sort 降序、id 降序。排序列写死，外部参数仅作过滤值，无注入风险。
+     */
+    @Select("""
+            <script>
+            SELECT g.*, m.min_price AS minPrice
+            FROM biz_gb_goods g
+            LEFT JOIN (
+                SELECT goods_id, MIN(original_price) AS min_price
+                FROM biz_gb_sku
+                WHERE deleted = 0
+                GROUP BY goods_id
+            ) m ON m.goods_id = g.id
+            WHERE g.deleted = 0
+            <if test="title != null and title != ''">
+                AND g.title LIKE CONCAT('%', #{title}, '%')
+            </if>
+            <if test="status != null">
+                AND g.status = #{status}
+            </if>
+            <if test="minPrice != null">
+                AND m.min_price &gt;= #{minPrice}
+            </if>
+            <if test="maxPrice != null">
+                AND m.min_price &lt;= #{maxPrice}
+            </if>
+            <if test="stockThreshold != null">
+                AND EXISTS (
+                    SELECT 1 FROM biz_gb_sku s
+                    WHERE s.goods_id = g.id AND s.deleted = 0 AND s.stock &lt;= #{stockThreshold}
+                )
+            </if>
+            ORDER BY g.sort DESC, g.id DESC
+            </script>
+            """)
+    IPage<GbGoods> selectAdminPage(Page<GbGoods> page,
+                                   @Param("title") String title,
+                                   @Param("status") Integer status,
+                                   @Param("minPrice") java.math.BigDecimal minPrice,
+                                   @Param("maxPrice") java.math.BigDecimal maxPrice,
+                                   @Param("stockThreshold") Integer stockThreshold);
 
     /**
      * 上架商品的去重分类列表（供 C 端分类条）

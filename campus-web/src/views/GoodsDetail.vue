@@ -49,20 +49,24 @@
           </div>
 
           <h1 class="title">{{ data.goods.title }}</h1>
-          <p class="subtitle">多人成团享拼团优惠 · 库存有限先到先得</p>
+          <p class="subtitle">{{ data.goods.subtitle || '多人成团享拼团优惠 · 库存有限先到先得' }}</p>
 
           <!-- 价格面板 -->
           <div class="price-box">
             <div class="price-main">
               <span class="label">拼团价</span>
               <span class="price big"><span class="symbol">¥</span>{{ displayPrice }}</span>
-              <span class="origin-price" v-if="hasDiscount">¥{{ displayPrice }}</span>
+              <span class="origin-price" v-if="data.goods.marketPrice">¥{{ data.goods.marketPrice }}</span>
             </div>
             <div class="price-extra">
               <span class="rate-item">
                 <em>{{ totalStock }}</em> 件库存
               </span>
               <span class="rate-sep">|</span>
+              <span class="rate-item">
+                <em>{{ data.goods.sales ?? 0 }}</em> 人已拼
+              </span>
+              <span class="rate-sep" v-if="primaryActivity">|</span>
               <span class="rate-item" v-if="primaryActivity">
                 <em>{{ primaryActivity.targetCount }}</em> 人成团
               </span>
@@ -86,7 +90,7 @@
                 :class="{ off: sku.stock <= 0, sel: selectedSkuId === sku.id }"
                 @click="sku.stock > 0 && (selectedSkuId = sku.id)"
               >
-                <el-image :src="data.goods.cover" fit="cover" class="sku-thumb">
+                <el-image :src="sku.skuImage || data.goods.cover" fit="cover" class="sku-thumb">
                   <template #error>
                     <div class="sku-thumb-ph">{{ data.goods.title?.charAt(0) || '商' }}</div>
                   </template>
@@ -181,8 +185,6 @@ const minPrice = computed(() => {
 const displayPrice = computed(() =>
   selectedSku.value ? selectedSku.value.originalPrice : minPrice.value
 )
-
-const hasDiscount = computed(() => !!primaryActivity.value)
 
 // 当前商品进行中的活动（取第一个作为去拼团目标）
 const primaryActivity = computed(() => activities.value[0] ?? null)

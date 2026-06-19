@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 /**
  * 拼团商品
@@ -19,6 +20,9 @@ public class GbGoods extends BaseEntity {
     /** 商品标题 */
     private String title;
 
+    /** 副标题 */
+    private String subtitle;
+
     /** 封面图URL */
     private String cover;
 
@@ -27,6 +31,18 @@ public class GbGoods extends BaseEntity {
 
     /** 图文详情(富文本) */
     private String detail;
+
+    /** 划线价/市场价 */
+    private BigDecimal marketPrice;
+
+    /** 销量 */
+    private Integer sales;
+
+    /** 排序权重(大在前) */
+    private Integer sort;
+
+    /** 上架时间 */
+    private LocalDateTime publishTime;
 
     /** 商品分类 */
     private String category;

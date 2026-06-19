@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.campus.biz.groupbuy.entity.GbGoods;
 import com.campus.biz.groupbuy.entity.GbSku;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -13,9 +14,10 @@ import java.util.List;
 public interface GbGoodsService extends IService<GbGoods> {
 
     /**
-     * 后台分页（可按标题/状态筛选）
+     * 后台分页（标题/状态/价格区间/库存预警筛选，按 sort 排序）
      */
-    Page<GbGoods> adminPage(Integer page, Integer pageSize, String title, Integer status);
+    Page<GbGoods> adminPage(Integer page, Integer pageSize, String title, Integer status,
+                            BigDecimal minPrice, BigDecimal maxPrice, Integer stockThreshold);
 
     /**
      * C 端分页（只查上架，含最低价，支持分类筛选与价格排序）
@@ -41,6 +43,11 @@ public interface GbGoodsService extends IService<GbGoods> {
      * 上架/下架
      */
     void changeStatus(Long id, Integer status);
+
+    /**
+     * 批量上架/下架
+     */
+    void changeStatusBatch(List<Long> ids, Integer status);
 
     /**
      * 删除商品（连带删除 SKU）

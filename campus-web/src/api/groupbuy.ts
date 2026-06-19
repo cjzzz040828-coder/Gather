@@ -5,10 +5,15 @@ import { request } from '@/utils/request'
 export interface GbGoods {
   id: number
   title: string
+  subtitle?: string
   cover: string
   images: string
   detail: string
   category: string
+  marketPrice?: number
+  sales?: number
+  sort?: number
+  publishTime?: string
   status: number
   minPrice?: number
 }
@@ -22,6 +27,7 @@ export interface GbSku {
   id: number
   goodsId: number
   skuName: string
+  skuImage?: string
   originalPrice: number
   stock: number
   status: number

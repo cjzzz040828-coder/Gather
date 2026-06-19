@@ -85,12 +85,14 @@
 
 <script setup lang="ts">
 import { ref, reactive, h, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { NButton, NSpace, NIcon, NTag, useMessage, useDialog, type DataTableColumns } from 'naive-ui'
 import { SearchOutline, RefreshOutline, AddOutline, CreateOutline, TrashOutline } from '@vicons/ionicons5'
 import { gbActivityApi, gbGoodsApi, type GbActivity, type GbDiscount } from '@/api/groupbuy'
 
 const message = useMessage()
 const dialog = useDialog()
+const route = useRoute()
 
 const statusOptions = [
   { label: '未开始', value: 0 },
@@ -109,7 +111,7 @@ const discountTypeOptions = [
 ]
 function discountTypeLabel(t?: number) { return discountTypeOptions.find(o => o.value === t)?.label ?? '-' }
 
-const searchForm = reactive({ status: null as number | null })
+const searchForm = reactive({ status: null as number | null, goodsId: null as number | null })
 const tableData = ref<GbActivity[]>([])
 const loading = ref(false)
 const pagination = reactive({ page: 1, pageSize: 10, itemCount: 0, showSizePicker: true, pageSizes: [10, 20, 50] })
@@ -180,6 +182,7 @@ async function loadData() {
       page: pagination.page,
       pageSize: pagination.pageSize,
       status: searchForm.status ?? undefined,
+      goodsId: searchForm.goodsId ?? undefined,
     })
     tableData.value = res.list
     pagination.itemCount = res.total
@@ -194,7 +197,7 @@ async function loadGoodsOptions() {
 }
 
 function handleSearch() { pagination.page = 1; loadData() }
-function handleReset() { searchForm.status = null; handleSearch() }
+function handleReset() { searchForm.status = null; searchForm.goodsId = null; handleSearch() }
 function handlePageChange(p: number) { pagination.page = p; loadData() }
 function handlePageSizeChange(s: number) { pagination.pageSize = s; pagination.page = 1; loadData() }
 
@@ -242,7 +245,21 @@ function handleDelete(row: GbActivity) {
   })
 }
 
-onMounted(() => { loadData(); loadGoodsOptions() })
+onMounted(async () => {
+  await loadGoodsOptions()
+  // 来自商品页的联动：?goodsId=&action=create
+  const goodsId = route.query.goodsId ? Number(route.query.goodsId) : null
+  const action = route.query.action as string | undefined
+  if (goodsId) {
+    if (action === 'create') {
+      openCreate()
+      form.activity.goodsId = goodsId
+    } else {
+      searchForm.goodsId = goodsId
+    }
+  }
+  loadData()
+})
 </script>
 
 <style scoped>

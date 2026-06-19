@@ -33,8 +33,15 @@ public class GbGoodsAdminController {
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(required = false) String title,
-            @RequestParam(required = false) Integer status) {
-        return Result.ok(PageResult.of(gbGoodsService.adminPage(page, pageSize, title, status)));
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) java.math.BigDecimal minPrice,
+            @RequestParam(required = false) java.math.BigDecimal maxPrice,
+            @RequestParam(required = false) Boolean lowStock,
+            @RequestParam(required = false, defaultValue = "10") Integer stockThreshold) {
+        // 仅当勾选库存预警时才把阈值传入查询，否则置空
+        Integer threshold = Boolean.TRUE.equals(lowStock) ? stockThreshold : null;
+        return Result.ok(PageResult.of(
+                gbGoodsService.adminPage(page, pageSize, title, status, minPrice, maxPrice, threshold)));
     }
 
     /**
@@ -81,6 +88,17 @@ public class GbGoodsAdminController {
     }
 
     /**
+     * 批量上架 / 下架
+     */
+    @PutMapping("/status/batch")
+    @SaCheckPermission("biz:gbGoods:status")
+    @Log(title = "拼团商品", businessType = BusinessType.UPDATE)
+    public Result<Void> changeStatusBatch(@RequestBody BatchStatusRequest request) {
+        gbGoodsService.changeStatusBatch(request.getIds(), request.getStatus());
+        return Result.ok();
+    }
+
+    /**
      * 删除（连带 SKU）
      */
     @DeleteMapping("/{id}")
@@ -106,6 +124,12 @@ public class GbGoodsAdminController {
     @Data
     public static class StatusRequest {
         private Long id;
+        private Integer status;
+    }
+
+    @Data
+    public static class BatchStatusRequest {
+        private List<Long> ids;
         private Integer status;
     }
 }

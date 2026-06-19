@@ -4,18 +4,25 @@ import { request } from '@/utils/request'
 export interface GbGoods {
   id?: number
   title?: string
+  subtitle?: string
   cover?: string
   images?: string
   detail?: string
+  marketPrice?: number
+  sales?: number
+  sort?: number
+  publishTime?: string
   category?: string
   status?: number
   createTime?: string
+  minPrice?: number
 }
 
 export interface GbSku {
   id?: number
   goodsId?: number
   skuName?: string
+  skuImage?: string
   originalPrice?: number
   stock?: number
   status?: number
@@ -72,7 +79,16 @@ export interface GbOrder {
 
 // ===== 商品 API =====
 export const gbGoodsApi = {
-  page(params: { page: number; pageSize: number; title?: string; status?: number }) {
+  page(params: {
+    page: number
+    pageSize: number
+    title?: string
+    status?: number
+    minPrice?: number
+    maxPrice?: number
+    lowStock?: boolean
+    stockThreshold?: number
+  }) {
     return request<{ list: GbGoods[]; total: number }>({ url: '/biz/gbGoods/page', method: 'get', params })
   },
   detail(id: number) {
@@ -86,6 +102,9 @@ export const gbGoodsApi = {
   },
   changeStatus(id: number, status: number) {
     return request({ url: '/biz/gbGoods/status', method: 'put', data: { id, status } })
+  },
+  changeStatusBatch(ids: number[], status: number) {
+    return request({ url: '/biz/gbGoods/status/batch', method: 'put', data: { ids, status } })
   },
   delete(id: number) {
     return request({ url: `/biz/gbGoods/${id}`, method: 'delete' })

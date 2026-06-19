@@ -31,16 +31,11 @@ public class GbGoodsServiceImpl extends ServiceImpl<GbGoodsMapper, GbGoods> impl
     private static final int STATUS_ONLINE = 1;
 
     @Override
-    public Page<GbGoods> adminPage(Integer page, Integer pageSize, String title, Integer status) {
-        LambdaQueryWrapper<GbGoods> wrapper = new LambdaQueryWrapper<>();
-        if (StringUtils.hasText(title)) {
-            wrapper.like(GbGoods::getTitle, title);
-        }
-        if (status != null) {
-            wrapper.eq(GbGoods::getStatus, status);
-        }
-        wrapper.orderByDesc(GbGoods::getId);
-        return this.page(new Page<>(page, pageSize), wrapper);
+    public Page<GbGoods> adminPage(Integer page, Integer pageSize, String title, Integer status,
+                                   java.math.BigDecimal minPrice, java.math.BigDecimal maxPrice,
+                                   Integer stockThreshold) {
+        Page<GbGoods> p = new Page<>(page == null ? 1 : page, pageSize == null ? 10 : pageSize);
+        return (Page<GbGoods>) baseMapper.selectAdminPage(p, title, status, minPrice, maxPrice, stockThreshold);
     }
 
     @Override
@@ -67,6 +62,10 @@ public class GbGoodsServiceImpl extends ServiceImpl<GbGoodsMapper, GbGoods> impl
         }
         if (goods.getStatus() == null) {
             goods.setStatus(STATUS_OFFLINE);
+        }
+        // 上架且未记录上架时间时补当前时间；下架不清空（保留历史上架时间）
+        if (goods.getStatus() == STATUS_ONLINE && goods.getPublishTime() == null) {
+            goods.setPublishTime(java.time.LocalDateTime.now());
         }
         this.saveOrUpdate(goods);
         Long goodsId = goods.getId();
@@ -112,6 +111,25 @@ public class GbGoodsServiceImpl extends ServiceImpl<GbGoodsMapper, GbGoods> impl
         }
         goods.setStatus(status);
         this.updateById(goods);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void changeStatusBatch(java.util.List<Long> ids, Integer status) {
+        if (ids == null || ids.isEmpty()) {
+            throw new BusinessException("请选择商品");
+        }
+        if (status != STATUS_ONLINE && status != STATUS_OFFLINE) {
+            throw new BusinessException("非法状态");
+        }
+        com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<GbGoods> wrapper =
+                new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<GbGoods>()
+                        .in(GbGoods::getId, ids)
+                        .set(GbGoods::getStatus, status);
+        if (status == STATUS_ONLINE) {
+            wrapper.set(GbGoods::getPublishTime, java.time.LocalDateTime.now());
+        }
+        this.update(null, wrapper);
     }
 
     @Override

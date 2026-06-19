@@ -21,6 +21,9 @@ public class GbSku extends BaseEntity {
     /** 规格名称 */
     private String skuName;
 
+    /** 规格图片URL */
+    private String skuImage;
+
     /** 原价 */
     private BigDecimal originalPrice;
 

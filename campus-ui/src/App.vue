@@ -1,5 +1,5 @@
   <template>
-  <n-config-provider :theme="themeStore.naiveTheme" :theme-overrides="currentThemeOverrides">
+  <n-config-provider :theme="themeStore.naiveTheme" :theme-overrides="currentThemeOverrides" :locale="zhCN" :date-locale="dateZhCN">
     <n-loading-bar-provider>
       <n-message-provider>
         <n-dialog-provider>
@@ -14,7 +14,7 @@
 
 <script setup lang="ts">
 import type { GlobalThemeOverrides } from 'naive-ui'
-import { useMessage, useDialog, useLoadingBar } from 'naive-ui'
+import { useMessage, useDialog, useLoadingBar, zhCN, dateZhCN } from 'naive-ui'
 import { defineComponent, computed, onMounted } from 'vue'
 import { useThemeStore } from '@/stores/theme'
 import Watermark from '@/components/Watermark/index.vue'
