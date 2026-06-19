@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { authApi, type LoginParams, type UserInfo, type MenuInfo } from '@/api/auth'
-import router, { resetRouter } from '@/router'
+import router, { resetRouter, addDynamicRoutes } from '@/router'
 
 export const useUserStore = defineStore('user', () => {
   // 状态
@@ -23,6 +23,9 @@ export const useUserStore = defineStore('user', () => {
     user.value = res.user
     // 登录成功后立即获取用户信息（包含菜单、权限等）
     await getInfo()
+    // 注册动态路由：守卫只在 user 为空时注册，而 getInfo 已填充 user，
+    // 故登录态下需主动注册，否则业务菜单（如拼团）的动态路由缺失会 404
+    addDynamicRoutes(menus.value)
     return res
   }
   
